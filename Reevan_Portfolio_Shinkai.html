@@ -8,45 +8,61 @@
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --vh:1vh; --gold:#f0c060; --lb:#7ec8e3;
-  --ink:#04060e; --text:rgba(215,230,248,0.92); --dim:rgba(175,205,235,0.62);
+  --vh:1vh;--gold:#f0c060;--gold2:#e8a830;--lb:#7ec8e3;
+  --ink:#04060e;--text:rgba(215,230,248,0.92);--dim:rgba(175,205,235,0.62);
 }
 html{scroll-behavior:smooth;}
 body{font-family:'Cormorant Garamond',serif;background:var(--ink);color:var(--text);overflow-x:hidden;}
 
-/* ── CANVASES ── */
+/* ─── CANVASES ─────────────────────────────── */
 #bgC,#ptC{position:fixed;inset:0;z-index:0;width:100%;height:100%;pointer-events:none;}
-#ptC{z-index:1;opacity:0.5;}
-.lrays{position:fixed;inset:0;z-index:2;pointer-events:none;
-  background:radial-gradient(ellipse 55% 110% at 28% -8%,rgba(240,192,96,.05) 0%,transparent 68%),
-             radial-gradient(ellipse 38% 75% at 72% -4%,rgba(126,200,227,.038) 0%,transparent 58%);
-  animation:rp 9s ease-in-out infinite;}
-@keyframes rp{0%,100%{opacity:.7}50%{opacity:1}}
+#ptC{z-index:1;opacity:0.45;}
 
-/* ── FIXED SCENE ── */
+/* ─── DYNAMIC LIGHT RAYS — shift with sky phase ─ */
+#lrays{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  transition:opacity 1.5s ease;
+}
+#lrays canvas{position:absolute;inset:0;width:100%;height:100%;}
+
+/* ─── VIGNETTE ───────────────────────────────── */
+.vignette{
+  position:fixed;inset:0;z-index:4;pointer-events:none;
+  background:
+    radial-gradient(ellipse 100% 100% at 50% 50%,transparent 55%,rgba(2,3,10,0.55) 100%);
+}
+
+/* ─── SCENE ──────────────────────────────────── */
 .scene{position:fixed;inset:0;z-index:3;overflow:hidden;pointer-events:none;}
 .sky{position:absolute;inset:0;}
 .s-dawn {background:radial-gradient(ellipse 85% 55% at 50% -5%,#f7c59f,#e0723a 18%,#b83858 38%,#72288a 58%,#181270 78%,#04041a 100%);opacity:1;}
 .s-day  {background:radial-gradient(ellipse 110% 65% at 50% -12%,#fffff0,#ffeaaa 14%,#87ceeb 38%,#4888d8 62%,#1b5495 82%,#081c40 100%);opacity:0;}
 .s-dusk {background:radial-gradient(ellipse 80% 60% at 28% -2%,#ff9a56,#e04878 22%,#8a1e6e 44%,#380e5e 64%,#0e0825 88%);opacity:0;}
 .s-night{background:radial-gradient(ellipse 100% 100% at 50% 0%,#080618,#04040e 45%,#020206 100%);opacity:0;}
-.cld{position:absolute;border-radius:50%;filter:blur(45px);animation:cldD var(--dr,50s) ease-in-out infinite alternate;}
-@keyframes cldD{from{transform:translateX(0)}to{transform:translateX(4%)}}
-.sun{position:absolute;width:clamp(55px,7.5vw,110px);height:clamp(55px,7.5vw,110px);border-radius:50%;
+
+/* Depth fog layers — 3 bands at different heights */
+.fog-layer{position:absolute;left:-15%;width:130%;pointer-events:none;filter:blur(28px);opacity:0;transition:opacity 1s;}
+#fog1{bottom:20%;height:clamp(60px,10vh,140px);background:linear-gradient(180deg,transparent,rgba(210,225,255,.07) 50%,rgba(190,215,255,.14) 100%);}
+#fog2{bottom:10%;height:clamp(40px,6vh,90px);background:linear-gradient(180deg,transparent,rgba(200,220,255,.10) 50%,rgba(180,210,255,.18) 100%);}
+#fog3{bottom:0;height:clamp(30px,5vh,70px);background:linear-gradient(180deg,transparent,rgba(190,215,255,.12) 50%,rgba(170,205,255,.22) 100%);}
+
+.cld{position:absolute;border-radius:50%;animation:cldD var(--dr,50s) ease-in-out infinite alternate;}
+@keyframes cldD{from{transform:translateX(0) scaleX(1)}to{transform:translateX(4%) scaleX(1.04)}}
+
+/* Sun — colour shifts dawn→day→dusk */
+.sun{position:absolute;width:clamp(50px,7vw,105px);height:clamp(50px,7vw,105px);border-radius:50%;
   background:radial-gradient(circle,#fffee0,#ffe060 28%,#ff9800 60%,transparent 100%);
-  box-shadow:0 0 clamp(40px,6vw,100px) clamp(18px,3vw,55px) rgba(255,215,70,.5),0 0 clamp(80px,12vw,200px) clamp(38px,6vw,100px) rgba(255,155,35,.2);
-  left:36%;top:9%;transform:translateX(-50%);}
-.moon{position:absolute;width:clamp(40px,5.5vw,85px);height:clamp(40px,5.5vw,85px);border-radius:50%;
+  left:36%;top:9%;transform:translateX(-50%);
+  transition:box-shadow 1.5s ease,background 1.5s ease;}
+.moon{position:absolute;width:clamp(38px,5vw,80px);height:clamp(38px,5vw,80px);border-radius:50%;
   background:radial-gradient(circle at 40% 38%,#fffff2,#e8e0d0 48%,#c0b898 100%);
-  box-shadow:0 0 38px 14px rgba(220,212,182,.3),inset -8px -5px 0 rgba(150,140,118,.22);
+  box-shadow:0 0 35px 13px rgba(220,212,182,.28),inset -7px -5px 0 rgba(150,140,118,.2);
   left:20%;top:11%;opacity:0;transform:translateX(-50%);}
+
 .stars-l{position:absolute;inset:0;opacity:0;}
 .star{position:absolute;border-radius:50%;background:#fff;animation:stw var(--d,3s) ease-in-out infinite var(--dl,0s);}
 @keyframes stw{0%,100%{opacity:var(--mo,.3);transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}
 .mt{position:absolute;bottom:0;width:100%;}
-.mist{position:absolute;bottom:14%;width:130%;left:-15%;height:clamp(70px,13vh,190px);
-  background:linear-gradient(180deg,transparent,rgba(200,220,255,.055) 40%,rgba(180,210,255,.11) 100%);
-  filter:blur(22px);opacity:0;}
 .pine-l{position:absolute;bottom:0;width:100%;overflow:hidden;}
 .aurora{position:absolute;top:2%;left:0;right:0;height:44%;opacity:0;pointer-events:none;
   background:linear-gradient(180deg,transparent,rgba(90,230,170,.05) 20%,rgba(55,155,235,.07) 48%,rgba(155,75,215,.05) 72%,transparent);
@@ -55,207 +71,265 @@ body{font-family:'Cormorant Garamond',serif;background:var(--ink);color:var(--te
 .sstar{position:absolute;height:1.5px;background:linear-gradient(90deg,rgba(255,255,255,.88),rgba(200,225,255,.45),transparent);border-radius:50%;opacity:0;animation:sht var(--dur,5s) ease-in-out infinite;transform-origin:left center;}
 @keyframes sht{0%{opacity:0;width:0}8%{opacity:1}35%{opacity:0;width:min(195px,13vw)}100%{opacity:0;width:min(195px,13vw)}}
 
-/* ── NAV ── */
-#nav{position:fixed;top:0;left:0;right:0;z-index:500;height:54px;padding:0 clamp(18px,5vw,58px);display:flex;align-items:center;justify-content:space-between;background:transparent;border-bottom:1px solid transparent;backdrop-filter:blur(0);transition:all .5s;}
-#nav.on{background:rgba(5,7,18,.88);border-bottom:1px solid rgba(240,192,96,.1);backdrop-filter:blur(18px);}
-.nlogo{font-family:'Shippori Mincho',serif;font-size:1.08rem;letter-spacing:.14em;color:var(--gold);text-decoration:none;}
-.nlinks{list-style:none;display:flex;gap:clamp(12px,2.4vw,28px);}
-.nlinks a{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.5rem,1vw,.64rem);letter-spacing:.24em;text-transform:uppercase;color:var(--dim);text-decoration:none;transition:color .3s;}
+/* ─── NAV ─────────────────────────────────────── */
+#nav{position:fixed;top:0;left:0;right:0;z-index:500;height:54px;padding:0 clamp(16px,4.5vw,55px);display:flex;align-items:center;justify-content:space-between;background:transparent;border-bottom:1px solid transparent;backdrop-filter:blur(0);transition:all .5s;}
+#nav.on{background:rgba(4,6,18,.9);border-bottom:1px solid rgba(240,192,96,.1);backdrop-filter:blur(20px);}
+.nlogo{font-family:'Shippori Mincho',serif;font-size:1rem;letter-spacing:.14em;color:var(--gold);text-decoration:none;}
+.nlinks{list-style:none;display:flex;gap:clamp(10px,2.2vw,26px);}
+.nlinks a{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.48rem,.95vw,.62rem);letter-spacing:.22em;text-transform:uppercase;color:var(--dim);text-decoration:none;transition:color .3s;}
 .nlinks a:hover{color:var(--gold);}
 @media(max-width:560px){.nlinks{display:none;}}
 
-/* ── SCROLL WRAPPER ── */
-/* The scene is fixed. This tall div creates the scroll space.
-   Info panels are sticky, positioned to show at the right scroll % */
+/* ─── SCROLL SPACE ─────────────────────────────── */
 #scrollSpace{position:relative;height:500vh;z-index:10;}
 
-/* ── INFO PANELS (sticky overlays over the parallax) ── */
-/* Each panel sticks in view for ~100vh of scroll, triggered by a sentinel */
-.info-stage{
-  position:sticky;top:0;
-  height:calc(var(--vh,1vh)*100);
-  display:flex;align-items:center;
-  pointer-events:none;
-  z-index:20;
-}
+/* ─── INFO PANELS ──────────────────────────────── */
+/* IMPROVEMENT 1: Smooth crossfade — opacity driven by JS scroll progress,
+   no hard class toggle. Panels overlap and dissolve into each other. */
+.info-stage{position:sticky;top:0;height:calc(var(--vh,1vh)*100);pointer-events:none;z-index:20;}
 .info-panel{
-  position:absolute;
-  width:100%;
-  padding:0 clamp(22px,8vw,110px);
+  position:absolute;inset:0;
+  display:flex;align-items:center;
+  padding:0 clamp(18px,7vw,100px);
   opacity:0;
-  transform:translateY(28px);
-  transition:opacity 1s ease, transform 1s ease;
-  pointer-events:auto;
+  /* NO CSS transition — opacity driven frame-by-frame by JS for smooth crossfade */
+  pointer-events:none;
+  will-change:opacity;
 }
-.info-panel.vis{opacity:1;transform:translateY(0);}
+.info-panel.is-active{pointer-events:auto;}
 
-/* Panel 1 — Hero (Dawn) */
-#p1{top:calc(var(--vh,1vh)*10);}
-.hero-kana{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.6rem,1.5vw,.88rem);letter-spacing:.38em;color:rgba(240,192,96,.72);margin-bottom:1rem;}
-.hero-name{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(2.8rem,8.5vw,8rem);line-height:.92;color:#fff;text-shadow:0 0 80px rgba(240,192,96,.14),0 4px 30px rgba(0,0,0,.7);}
-.hero-name .acc{display:block;background:linear-gradient(135deg,#f0e0b0,#f0c060,#e8a830);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.hero-div{width:clamp(44px,8vw,108px);height:1px;background:linear-gradient(90deg,rgba(240,192,96,.82),transparent);margin:1.3rem 0;}
-.hero-role{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.9rem,2.5vw,1.85rem);color:rgba(218,232,252,.84);letter-spacing:.09em;}
-.hero-sub{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.55rem,1.1vw,.72rem);letter-spacing:.24em;color:rgba(240,192,96,.52);margin-top:.65rem;}
-.hero-btns{display:flex;gap:.85rem;flex-wrap:wrap;margin-top:1.9rem;}
-.btn-a{font-family:'Noto Serif JP',serif;font-weight:300;font-size:clamp(.56rem,1.2vw,.74rem);letter-spacing:.28em;text-transform:uppercase;text-decoration:none;padding:.8rem 1.85rem;border:1px solid rgba(240,192,96,.48);color:var(--gold);background:rgba(240,192,96,.055);backdrop-filter:blur(8px);transition:all .4s;}
-.btn-a:hover{border-color:rgba(240,192,96,.85);color:#fff;box-shadow:0 0 28px rgba(240,192,96,.18);}
-.btn-b{font-family:'Noto Serif JP',serif;font-weight:300;font-size:clamp(.56rem,1.2vw,.74rem);letter-spacing:.28em;text-transform:uppercase;text-decoration:none;padding:.8rem 1.85rem;border:1px solid rgba(220,234,255,.18);color:var(--dim);background:transparent;transition:all .4s;}
-.btn-b:hover{border-color:rgba(220,234,255,.48);color:#fff;}
+/* ─── PANEL CONTENT SIZES — IMPROVEMENT 3: tighter type scale ─── */
+.pan-label{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.48rem,.92vw,.62rem);letter-spacing:.44em;text-transform:uppercase;color:rgba(240,192,96,.58);margin-bottom:.42rem;display:flex;align-items:center;gap:.65rem;}
+.pan-label::before{content:'—';opacity:.42;}
 
-/* Panel 2 — About + Stats (Day) */
-#p2{top:calc(var(--vh,1vh)*8);}
-.pan-label{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.5rem,1vw,.64rem);letter-spacing:.45em;text-transform:uppercase;color:rgba(240,192,96,.58);margin-bottom:.45rem;display:flex;align-items:center;gap:.7rem;}
-.pan-label::before{content:'—';opacity:.45;}
-.pan-h{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(1.6rem,4.2vw,3.2rem);color:#fff;line-height:1.05;margin-bottom:1.8rem;}
+/* IMPROVEMENT 3: headings use tighter clamp values */
+.pan-h{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(1.5rem,3.8vw,2.9rem);color:#fff;line-height:1.06;margin-bottom:1.6rem;}
 .pan-h .g{color:var(--gold);}
-.pan-h .jps{display:block;font-family:'Noto Serif JP',serif;font-weight:200;font-size:.3em;letter-spacing:.5em;color:rgba(240,192,96,.4);margin-top:.38em;}
-.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,72px);align-items:start;max-width:1000px;}
-@media(max-width:640px){.about-grid{grid-template-columns:1fr;}}
-.about-text{font-family:'Cormorant Garamond',serif;font-size:clamp(.9rem,1.75vw,1.14rem);line-height:1.95;color:var(--dim);}
+.pan-h .jps{display:block;font-family:'Noto Serif JP',serif;font-weight:200;font-size:.28em;letter-spacing:.48em;color:rgba(240,192,96,.38);margin-top:.36em;}
+
+/* hero */
+.hero-kana{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.56rem,1.3vw,.82rem);letter-spacing:.36em;color:rgba(240,192,96,.7);margin-bottom:.9rem;}
+.hero-name{font-family:'Shippori Mincho',serif;font-weight:400;
+  /* IMPROVEMENT 3: was 8.5vw max 8rem — reduced */
+  font-size:clamp(2.4rem,7vw,6.5rem);
+  line-height:.93;color:#fff;text-shadow:0 0 80px rgba(240,192,96,.13),0 4px 28px rgba(0,0,0,.68);}
+.hero-name .acc{display:block;background:linear-gradient(135deg,#f0e0b0,#f0c060,#e8a830);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-div{width:clamp(40px,7vw,100px);height:1px;background:linear-gradient(90deg,rgba(240,192,96,.8),transparent);margin:1.1rem 0;}
+.hero-role{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.85rem,2.2vw,1.7rem);color:rgba(218,232,252,.82);letter-spacing:.08em;}
+.hero-sub{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.5rem,1vw,.68rem);letter-spacing:.22em;color:rgba(240,192,96,.5);margin-top:.6rem;}
+.hero-btns{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1.7rem;}
+.btn-a,.btn-b{font-family:'Noto Serif JP',serif;font-weight:300;font-size:clamp(.5rem,1.1vw,.7rem);letter-spacing:.26em;text-transform:uppercase;text-decoration:none;padding:.75rem 1.75rem;transition:all .4s;}
+.btn-a{border:1px solid rgba(240,192,96,.46);color:var(--gold);background:rgba(240,192,96,.05);backdrop-filter:blur(8px);}
+.btn-a:hover{border-color:rgba(240,192,96,.85);color:#fff;box-shadow:0 0 26px rgba(240,192,96,.18);}
+.btn-b{border:1px solid rgba(220,234,255,.17);color:var(--dim);background:transparent;}
+.btn-b:hover{border-color:rgba(220,234,255,.46);color:#fff;}
+
+/* about grid — IMPROVEMENT 2: mobile-first, stack early */
+.about-wrap{width:100%;max-width:980px;}
+.about-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(20px,4.5vw,65px);align-items:start;}
+@media(max-width:700px){.about-grid{grid-template-columns:1fr;gap:16px;}}
+.about-text{font-family:'Cormorant Garamond',serif;font-size:clamp(.88rem,1.65vw,1.1rem);line-height:1.95;color:var(--dim);}
 .about-text strong{color:#fff;font-style:normal;}
-.about-text p+p{margin-top:.95em;}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(240,192,96,.1);border:1px solid rgba(240,192,96,.12);}
-.stat-box{background:rgba(5,8,18,.82);padding:clamp(14px,2.5vw,26px);text-align:center;backdrop-filter:blur(4px);}
-.stat-n{font-family:'Shippori Mincho',serif;font-size:clamp(1.9rem,4.8vw,3.5rem);background:linear-gradient(135deg,#f0e0b0,#f0c060);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
-.stat-l{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.45rem,.86vw,.58rem);letter-spacing:.22em;color:var(--dim);text-transform:uppercase;margin-top:.4rem;}
+.about-text p+p{margin-top:.85em;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(240,192,96,.09);border:1px solid rgba(240,192,96,.11);}
+.stat-box{background:rgba(4,6,16,.85);padding:clamp(12px,2.2vw,24px);text-align:center;backdrop-filter:blur(6px);}
+/* IMPROVEMENT 3: stat numbers tighter */
+.stat-n{font-family:'Shippori Mincho',serif;font-size:clamp(1.7rem,4.2vw,3.1rem);background:linear-gradient(135deg,#f0e0b0,#f0c060);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.stat-l{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.42rem,.8vw,.56rem);letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin-top:.38rem;}
 
-/* Panel 3 — Skills (Dusk) */
-#p3{top:calc(var(--vh,1vh)*8);}
-.skills-wrap{max-width:960px;}
-.sk-cat{border:1px solid rgba(240,192,96,.1);background:rgba(8,12,28,.72);backdrop-filter:blur(10px);padding:clamp(14px,2.5vw,24px);margin-bottom:1.1rem;transition:border-color .4s;}
-.sk-cat:hover{border-color:rgba(240,192,96,.24);}
-.sk-name{font-family:'Noto Serif JP',serif;font-weight:300;font-size:clamp(.58rem,1.18vw,.75rem);letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;}
-.sk-name::before{content:'◈';font-size:.66em;opacity:.7;}
-.pills{display:flex;flex-wrap:wrap;gap:.4rem;}
-.pill{font-family:'Cormorant Garamond',serif;font-size:clamp(.78rem,1.5vw,.94rem);padding:.26rem .82rem;border:1px solid rgba(126,200,227,.2);background:rgba(126,200,227,.04);color:rgba(198,222,244,.82);transition:all .3s;}
-.pill:hover{border-color:rgba(126,200,227,.5);color:#fff;background:rgba(126,200,227,.08);}
+/* skills — IMPROVEMENT 2: no overflow on mobile */
+.skills-wrap{width:100%;max-width:920px;}
+.sk-cat{border:1px solid rgba(240,192,96,.1);background:rgba(6,10,22,.78);backdrop-filter:blur(12px);padding:clamp(12px,2.2vw,22px);margin-bottom:.9rem;transition:border-color .4s;}
+.sk-cat:hover{border-color:rgba(240,192,96,.22);}
+.sk-name{font-family:'Noto Serif JP',serif;font-weight:300;font-size:clamp(.54rem,1.1vw,.72rem);letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:.7rem;display:flex;align-items:center;gap:.48rem;}
+.sk-name::before{content:'◈';font-size:.64em;opacity:.68;}
+.pills{display:flex;flex-wrap:wrap;gap:.38rem;}
+.pill{font-family:'Cormorant Garamond',serif;font-size:clamp(.76rem,1.42vw,.9rem);padding:.24rem .78rem;border:1px solid rgba(126,200,227,.19);background:rgba(126,200,227,.04);color:rgba(198,222,244,.8);transition:all .3s;}
+.pill:hover{border-color:rgba(126,200,227,.48);color:#fff;}
 
-/* Panel 4 — Experience (Night) */
-#p4{top:calc(var(--vh,1vh)*6);}
-.exp-wrap{max-width:900px;}
-.tl{position:relative;padding-left:clamp(18px,3.5vw,38px);}
-.tl::before{content:'';position:absolute;left:0;top:8px;bottom:0;width:1px;background:linear-gradient(180deg,var(--gold),rgba(240,192,96,.15) 70%,transparent);}
-.ei{position:relative;margin-bottom:clamp(22px,3.8vh,38px);padding-left:clamp(18px,3vw,30px);}
+/* experience */
+.exp-wrap{width:100%;max-width:860px;}
+.tl{position:relative;padding-left:clamp(16px,3.2vw,36px);}
+.tl::before{content:'';position:absolute;left:0;top:8px;bottom:0;width:1px;background:linear-gradient(180deg,var(--gold),rgba(240,192,96,.12) 72%,transparent);}
+.ei{position:relative;margin-bottom:clamp(18px,3vh,32px);padding-left:clamp(16px,2.8vw,28px);}
 .ei::before{content:'';position:absolute;left:-4px;top:8px;width:9px;height:9px;border-radius:50%;background:#040910;border:2px solid var(--gold);box-shadow:0 0 12px rgba(240,192,96,.8);}
-.er{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(.88rem,1.95vw,1.28rem);letter-spacing:.04em;color:#fff;}
-.ec{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.78rem,1.5vw,1rem);color:var(--gold);margin:.15rem 0;}
-.em{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.45rem,.88vw,.58rem);letter-spacing:.15em;color:var(--dim);}
+.er{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(.86rem,1.85vw,1.24rem);letter-spacing:.04em;color:#fff;}
+.ec{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.76rem,1.45vw,.98rem);color:var(--gold);margin:.14rem 0;}
+.em{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.42rem,.84vw,.56rem);letter-spacing:.14em;color:var(--dim);}
 
-/* Panel 5 — Projects + Contact (Deep Night) */
-#p5{top:calc(var(--vh,1vh)*6);}
-.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(220px,36vw,380px),1fr));gap:clamp(10px,1.8vw,18px);max-width:960px;}
-.proj-card{border:1px solid rgba(240,192,96,.11);background:rgba(8,12,28,.8);backdrop-filter:blur(10px);padding:clamp(16px,2.8vw,28px);transition:border-color .4s,transform .45s;}
-.proj-card:hover{border-color:rgba(240,192,96,.28);transform:translateY(-4px);}
-.pe{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.44rem,.82vw,.56rem);letter-spacing:.28em;text-transform:uppercase;color:rgba(240,192,96,.6);margin-bottom:.65rem;display:flex;align-items:center;gap:.5rem;}
-.pe::before{content:'';width:18px;height:1px;background:var(--gold);opacity:.55;}
-.pn{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(.92rem,1.9vw,1.22rem);color:#fff;margin-bottom:.55rem;}
-.pd{font-family:'Cormorant Garamond',serif;font-size:clamp(.8rem,1.5vw,.94rem);line-height:1.8;color:var(--dim);}
-.ptags{display:flex;flex-wrap:wrap;gap:.32rem;margin-top:.82rem;}
-.ptag{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.4rem,.76vw,.52rem);letter-spacing:.1em;padding:.18rem .52rem;border:1px solid rgba(126,200,227,.18);color:rgba(126,200,227,.72);}
+/* projects — IMPROVEMENT 2: 1 col on mobile */
+.proj-wrap{width:100%;max-width:920px;}
+.proj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(9px,1.5vw,16px);}
+@media(max-width:600px){.proj-grid{grid-template-columns:1fr;}}
+.proj-card{border:1px solid rgba(240,192,96,.1);background:rgba(6,10,22,.82);backdrop-filter:blur(10px);padding:clamp(14px,2.4vw,24px);transition:border-color .4s,transform .42s;}
+.proj-card:hover{border-color:rgba(240,192,96,.26);transform:translateY(-3px);}
+.pe{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.42rem,.78vw,.54rem);letter-spacing:.26em;text-transform:uppercase;color:rgba(240,192,96,.58);margin-bottom:.58rem;display:flex;align-items:center;gap:.46rem;}
+.pe::before{content:'';width:16px;height:1px;background:var(--gold);opacity:.54;}
+.pn{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(.88rem,1.75vw,1.15rem);color:#fff;margin-bottom:.48rem;}
+.pd{font-family:'Cormorant Garamond',serif;font-size:clamp(.76rem,1.42vw,.9rem);line-height:1.78;color:var(--dim);}
+.ptags{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.75rem;}
+.ptag{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.38rem,.72vw,.5rem);letter-spacing:.1em;padding:.16rem .5rem;border:1px solid rgba(126,200,227,.17);color:rgba(126,200,227,.7);}
 
-/* contact mini */
-.ctc-mini{margin-top:2rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;}
-.ctc-label{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.52rem,1vw,.65rem);letter-spacing:.35em;text-transform:uppercase;color:rgba(240,192,96,.55);}
-.ctc-link{font-family:'Cormorant Garamond',serif;font-size:clamp(.88rem,1.7vw,1.05rem);color:var(--dim);text-decoration:none;transition:color .3s;border-bottom:1px solid rgba(240,192,96,.2);padding-bottom:1px;}
+/* contact teaser in parallax */
+.ctc-mini{margin-top:1.6rem;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;}
+.ctc-label{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.46rem,.9vw,.6rem);letter-spacing:.32em;text-transform:uppercase;color:rgba(240,192,96,.5);}
+.ctc-link{font-family:'Cormorant Garamond',serif;font-size:clamp(.82rem,1.6vw,1rem);color:var(--dim);text-decoration:none;transition:color .3s;border-bottom:1px solid rgba(240,192,96,.18);padding-bottom:1px;}
 .ctc-link:hover{color:var(--gold);}
 
-/* ── UI CHROME ── */
-.sh{position:fixed;bottom:max(env(safe-area-inset-bottom,0px)+18px,3.5vh);left:50%;transform:translateX(-50%);z-index:200;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:9px;transition:opacity .7s;}
-.sh span{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.4rem,.92vw,.54rem);letter-spacing:.42em;text-transform:uppercase;color:rgba(240,192,96,.56);animation:sp 3s ease-in-out infinite;}
-.sh .sl{width:1px;height:clamp(20px,4vh,42px);background:linear-gradient(to bottom,rgba(240,192,96,.56),transparent);animation:sl 2.2s ease-in-out infinite;}
+/* ─── UI CHROME ───────────────────────────────── */
+.sh{position:fixed;bottom:max(env(safe-area-inset-bottom,0px)+16px,3vh);left:50%;transform:translateX(-50%);z-index:200;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:8px;transition:opacity .7s;}
+.sh span{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.38rem,.88vw,.52rem);letter-spacing:.4em;text-transform:uppercase;color:rgba(240,192,96,.54);animation:sp 3s ease-in-out infinite;}
+.sh .sl{width:1px;height:clamp(18px,3.5vh,38px);background:linear-gradient(to bottom,rgba(240,192,96,.54),transparent);animation:sl 2.2s ease-in-out infinite;}
 @keyframes sl{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
-@keyframes sp{0%,100%{opacity:.42}50%{opacity:1}}
-.tdots{position:fixed;top:max(env(safe-area-inset-top,0px)+14px,3vh);right:clamp(10px,3.5vw,36px);z-index:200;pointer-events:none;display:flex;flex-direction:column;gap:clamp(6px,1.1vh,10px);}
-.td{width:6px;height:6px;border-radius:50%;border:1px solid rgba(240,192,96,.36);transition:all .5s;}
-.td.on{background:var(--gold);box-shadow:0 0 11px rgba(240,192,96,.9);transform:scale(1.7);}
-.pb{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,#f0c060,#e8a830,#ffb7c5,#7ec8e3);width:0%;z-index:300;pointer-events:none;transition:width .06s linear;}
+@keyframes sp{0%,100%{opacity:.4}50%{opacity:1}}
+.tdots{position:fixed;top:max(env(safe-area-inset-top,0px)+14px,2.8vh);right:clamp(10px,3.2vw,34px);z-index:200;pointer-events:none;display:flex;flex-direction:column;gap:clamp(5px,1vh,9px);}
+.td{width:5px;height:5px;border-radius:50%;border:1px solid rgba(240,192,96,.34);transition:all .5s;}
+.td.on{background:var(--gold);box-shadow:0 0 10px rgba(240,192,96,.9);transform:scale(1.8);}
+.pb{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,#f0c060,#e8a830,#ffb7c5,#7ec8e3);width:0%;z-index:300;pointer-events:none;}
 
-/* ── PORTFOLIO (after parallax) ── */
+/* ─── PORTFOLIO (below parallax) ───────────────── */
 #port{position:relative;z-index:20;background:linear-gradient(180deg,transparent 0%,rgba(4,6,14,.97) 4vh,#040610 9vh);}
-.sec{padding:clamp(60px,10vh,120px) clamp(18px,7.5vw,108px);position:relative;}
-.sec::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(240,192,96,.12) 32%,rgba(126,200,227,.08) 68%,transparent);}
-.si{max-width:1020px;margin:0 auto;}
-.sk2{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.5rem,1vw,.63rem);letter-spacing:.46em;text-transform:uppercase;color:rgba(240,192,96,.56);margin-bottom:.44rem;display:flex;align-items:center;gap:.7rem;}
-.sk2::before{content:'—';opacity:.42;}
-.sh2{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(1.65rem,4.5vw,3.3rem);color:#fff;line-height:1;margin-bottom:2.5rem;}
+.sec{padding:clamp(55px,9vh,115px) clamp(16px,7vw,105px);position:relative;}
+.sec::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(240,192,96,.11) 30%,rgba(126,200,227,.08) 68%,transparent);}
+.si{max-width:1000px;margin:0 auto;}
+.sk2{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.46rem,.9vw,.6rem);letter-spacing:.44em;text-transform:uppercase;color:rgba(240,192,96,.54);margin-bottom:.4rem;display:flex;align-items:center;gap:.65rem;}
+.sk2::before{content:'—';opacity:.4;}
+/* IMPROVEMENT 3: consistent section headings */
+.sh2{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(1.5rem,4vw,3rem);color:#fff;line-height:1;margin-bottom:2.3rem;}
 .sh2 .g{color:var(--gold);}
-.sh2 .jps{display:block;font-family:'Noto Serif JP',serif;font-weight:200;font-size:.29em;letter-spacing:.48em;color:rgba(240,192,96,.4);margin-top:.4em;}
-.rv{opacity:0;transform:translateY(32px);transition:opacity 1s ease,transform 1s ease;}
+.sh2 .jps{display:block;font-family:'Noto Serif JP',serif;font-weight:200;font-size:.28em;letter-spacing:.46em;color:rgba(240,192,96,.38);margin-top:.38em;}
+.rv{opacity:0;transform:translateY(28px);transition:opacity .9s ease,transform .9s ease;}
 .rv.in{opacity:1;transform:translateY(0);}
-.rvl{opacity:0;transform:translateX(-32px);transition:opacity 1s ease,transform 1s ease;}
-.rvl.in{opacity:1;transform:translateX(0);}
-.d1{transition-delay:.14s}.d2{transition-delay:.28s}.d3{transition-delay:.42s}.d4{transition-delay:.56s}
+.d1{transition-delay:.12s}.d2{transition-delay:.24s}.d3{transition-delay:.36s}.d4{transition-delay:.48s}
 
-/* full exp timeline in portfolio section */
-.tl2{position:relative;padding-left:clamp(18px,3.5vw,38px);}
-.tl2::before{content:'';position:absolute;left:0;top:8px;bottom:0;width:1px;background:linear-gradient(180deg,var(--gold),rgba(240,192,96,.12) 75%,transparent);}
-.ei2{position:relative;margin-bottom:clamp(30px,5vh,50px);padding-left:clamp(18px,3vw,30px);transition:transform .38s;}
+/* full experience */
+.tl2{position:relative;padding-left:clamp(16px,3.2vw,36px);}
+.tl2::before{content:'';position:absolute;left:0;top:8px;bottom:0;width:1px;background:linear-gradient(180deg,var(--gold),rgba(240,192,96,.1) 75%,transparent);}
+.ei2{position:relative;margin-bottom:clamp(26px,4.5vh,46px);padding-left:clamp(16px,2.8vw,28px);transition:transform .36s;}
 .ei2:hover{transform:translateX(4px);}
-.ei2::before{content:'';position:absolute;left:-4px;top:8px;width:9px;height:9px;border-radius:50%;background:#040610;border:2px solid var(--gold);box-shadow:0 0 14px rgba(240,192,96,.8);}
-.er2{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(.95rem,2.1vw,1.38rem);letter-spacing:.04em;color:#fff;}
-.ec2{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.82rem,1.6vw,1.05rem);color:var(--gold);margin:.18rem 0;}
-.em2{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.46rem,.9vw,.6rem);letter-spacing:.15em;color:var(--dim);margin-bottom:.78rem;}
+.ei2::before{content:'';position:absolute;left:-4px;top:8px;width:9px;height:9px;border-radius:50%;background:#040610;border:2px solid var(--gold);box-shadow:0 0 13px rgba(240,192,96,.78);}
+.er2{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(.92rem,2vw,1.32rem);letter-spacing:.04em;color:#fff;}
+.ec2{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.8rem,1.55vw,1rem);color:var(--gold);margin:.17rem 0;}
+.em2{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.44rem,.85vw,.57rem);letter-spacing:.14em;color:var(--dim);margin-bottom:.75rem;}
 .eb{list-style:none;}
-.eb li{position:relative;padding-left:1.3em;font-family:'Cormorant Garamond',serif;font-size:clamp(.86rem,1.65vw,1.02rem);line-height:1.84;color:var(--dim);margin-bottom:.3rem;}
-.eb li::before{content:'›';position:absolute;left:0;color:rgba(240,192,96,.65);font-size:1.1em;line-height:1.78;}
-.eb li strong{color:rgba(255,215,100,.88);font-style:normal;}
+.eb li{position:relative;padding-left:1.25em;font-family:'Cormorant Garamond',serif;font-size:clamp(.84rem,1.6vw,.98rem);line-height:1.82;color:var(--dim);margin-bottom:.28rem;}
+.eb li::before{content:'›';position:absolute;left:0;color:rgba(240,192,96,.62);font-size:1.1em;line-height:1.76;}
+.eb li strong{color:rgba(255,215,100,.86);font-style:normal;}
 
-/* creds */
-.ceg{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,4.5vw,58px);}
-@media(max-width:600px){.ceg{grid-template-columns:1fr;}}
-.edc{border:1px solid rgba(240,192,96,.12);background:rgba(8,12,28,.7);padding:clamp(14px,2.5vw,24px);margin-bottom:.9rem;transition:border-color .4s,transform .4s;}
-.edc:hover{border-color:rgba(240,192,96,.28);transform:translateZ(6px);}
-.edg{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(.88rem,1.78vw,1.08rem);color:#fff;}
-.eds{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.78rem,1.5vw,.95rem);color:var(--gold);margin:.2rem 0;}
-.edy{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.44rem,.84vw,.58rem);letter-spacing:.15em;color:var(--dim);}
-.cr{padding:clamp(11px,1.7vw,18px) 0;border-bottom:1px solid rgba(240,192,96,.07);transition:padding-left .3s;position:relative;}
-.cr::before{content:'';position:absolute;left:0;top:50%;width:0;height:1px;background:var(--gold);transition:width .36s;transform:translateY(-50%);}
-.cr:hover{padding-left:.7rem;}
-.cr:hover::before{width:.5rem;}
-.cn{font-family:'Cormorant Garamond',serif;font-size:clamp(.84rem,1.6vw,.98rem);color:#fff;}
-.ci{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.44rem,.84vw,.58rem);letter-spacing:.13em;color:var(--gold);opacity:.7;}
-.aw{display:flex;align-items:flex-start;gap:.85rem;padding:clamp(12px,1.8vw,20px);border:1px solid rgba(240,192,96,.11);background:rgba(8,12,28,.6);margin-bottom:.85rem;transition:border-color .38s,transform .38s;}
-.aw:hover{border-color:rgba(240,192,96,.36);transform:translateY(-2px);}
-.awi{font-size:1.35rem;flex-shrink:0;line-height:1.4;}
-.awt{font-family:'Cormorant Garamond',serif;font-size:clamp(.84rem,1.6vw,.98rem);line-height:1.76;color:var(--dim);}
+/* education / creds */
+.ceg{display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,4.2vw,55px);}
+@media(max-width:580px){.ceg{grid-template-columns:1fr;}}
+.edc{border:1px solid rgba(240,192,96,.11);background:rgba(6,10,22,.72);padding:clamp(13px,2.3vw,22px);margin-bottom:.85rem;transition:border-color .4s,transform .4s;}
+.edc:hover{border-color:rgba(240,192,96,.26);transform:translateY(-2px);}
+.edg{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(.86rem,1.7vw,1.05rem);color:#fff;}
+.eds{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.76rem,1.45vw,.92rem);color:var(--gold);margin:.18rem 0;}
+.edy{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.42rem,.8vw,.56rem);letter-spacing:.14em;color:var(--dim);}
+.cr{padding:clamp(10px,1.6vw,17px) 0;border-bottom:1px solid rgba(240,192,96,.07);transition:padding-left .3s;position:relative;}
+.cr::before{content:'';position:absolute;left:0;top:50%;width:0;height:1px;background:var(--gold);transition:width .34s;transform:translateY(-50%);}
+.cr:hover{padding-left:.65rem;}.cr:hover::before{width:.48rem;}
+.cn{font-family:'Cormorant Garamond',serif;font-size:clamp(.82rem,1.56vw,.96rem);color:#fff;}
+.ci{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.42rem,.78vw,.55rem);letter-spacing:.12em;color:var(--gold);opacity:.68;}
+.aw{display:flex;align-items:flex-start;gap:.8rem;padding:clamp(11px,1.7vw,19px);border:1px solid rgba(240,192,96,.1);background:rgba(6,10,22,.6);margin-bottom:.8rem;transition:border-color .36s,transform .36s;}
+.aw:hover{border-color:rgba(240,192,96,.34);transform:translateY(-2px);}
+.awi{font-size:1.3rem;flex-shrink:0;line-height:1.42;}
+.awt{font-family:'Cormorant Garamond',serif;font-size:clamp(.82rem,1.56vw,.96rem);line-height:1.74;color:var(--dim);}
 .awt strong{color:#fff;font-style:normal;}
 
-/* contact */
-.ctc-sec{text-align:center;}
-.ctc-sec .ctcin{max-width:700px;margin:0 auto;}
-.ctch{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(1.85rem,5.5vw,4.2rem);color:#fff;margin-bottom:1rem;}
+/* ─── CONTACT SECTION — IMPROVEMENT 5 ─────────── */
+#ctc-sec{
+  position:relative;overflow:hidden;text-align:center;
+  background:linear-gradient(180deg,#040610 0%,#030510 100%);
+}
+/* Animated radial glow behind contact */
+#ctc-sec::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% -5%,rgba(240,192,96,.06) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 70% at 50% 110%,rgba(126,200,227,.04) 0%,transparent 65%);
+}
+/* Horizontal rule with kanji */
+.ctc-rule{display:flex;align-items:center;gap:1.2rem;max-width:500px;margin:0 auto 2.8rem;justify-content:center;}
+.ctc-rule::before,.ctc-rule::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(240,192,96,.28),transparent);}
+.ctc-rule span{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.52rem,1vw,.65rem);letter-spacing:.4em;text-transform:uppercase;color:rgba(240,192,96,.5);}
+/* large ambient Japanese character */
+.ctc-ambient{
+  position:absolute;right:-2%;top:50%;transform:translateY(-50%);
+  font-family:'Noto Serif JP',serif;font-weight:200;
+  font-size:clamp(120px,22vw,280px);
+  color:rgba(240,192,96,.025);
+  letter-spacing:-.05em;line-height:1;
+  pointer-events:none;user-select:none;
+  white-space:nowrap;
+}
+.ctcin{max-width:660px;margin:0 auto;position:relative;}
+/* IMPROVEMENT 3: contact heading tighter */
+.ctch{font-family:'Shippori Mincho',serif;font-weight:400;font-size:clamp(1.8rem,5.2vw,4rem);color:#fff;margin-bottom:1rem;line-height:1.05;}
 .ctch span{color:var(--gold);}
-.ctcb{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.88rem,1.75vw,1.12rem);line-height:1.88;color:var(--dim);margin-bottom:2.5rem;}
-.cls{display:flex;flex-wrap:wrap;justify-content:center;gap:.85rem;}
-.cl{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.52rem,1.08vw,.68rem);letter-spacing:.26em;text-transform:uppercase;text-decoration:none;padding:.78rem 1.8rem;border:1px solid rgba(240,192,96,.22);color:rgba(240,192,96,.78);background:rgba(240,192,96,.04);backdrop-filter:blur(8px);transition:all .4s;}
-.cl:hover{border-color:rgba(240,192,96,.68);color:#fff;background:rgba(240,192,96,.09);}
-.cl.p{border-color:rgba(240,192,96,.45);color:var(--gold);}
+.ctcb{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(.86rem,1.68vw,1.1rem);line-height:1.88;color:var(--dim);margin-bottom:1rem;}
+.ctc-avail{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.48rem,.92vw,.62rem);letter-spacing:.28em;text-transform:uppercase;color:rgba(240,192,96,.52);margin-bottom:2.4rem;}
+/* Contact cards — location/email/linkedin as bordered tiles */
+.ctc-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:.75rem;margin-bottom:2.4rem;}
+.ctc-card{
+  font-family:'Cormorant Garamond',serif;font-size:clamp(.82rem,1.55vw,.98rem);
+  text-decoration:none;color:var(--dim);
+  border:1px solid rgba(240,192,96,.15);
+  background:rgba(240,192,96,.03);
+  backdrop-filter:blur(8px);
+  padding:clamp(14px,2.2vw,22px) clamp(18px,2.8vw,30px);
+  display:flex;flex-direction:column;align-items:center;gap:.35rem;
+  transition:all .4s;min-width:clamp(140px,22vw,200px);
+}
+.ctc-card:hover{border-color:rgba(240,192,96,.48);color:#fff;background:rgba(240,192,96,.07);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.35),0 0 30px rgba(240,192,96,.06);}
+.ctc-card .cicon{font-size:1.3rem;opacity:.8;}
+.ctc-card .clabel{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.42rem,.8vw,.54rem);letter-spacing:.3em;text-transform:uppercase;color:rgba(240,192,96,.55);margin-bottom:.1rem;}
+/* big CTA button */
+.ctc-cta{
+  display:inline-block;font-family:'Noto Serif JP',serif;font-weight:300;
+  font-size:clamp(.52rem,1.05vw,.68rem);letter-spacing:.32em;text-transform:uppercase;
+  text-decoration:none;padding:.92rem 2.6rem;
+  border:1px solid rgba(240,192,96,.44);
+  color:var(--gold);background:rgba(240,192,96,.05);
+  backdrop-filter:blur(10px);position:relative;overflow:hidden;
+  transition:all .4s;
+}
+.ctc-cta::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(240,192,96,.1),transparent);opacity:0;transition:opacity .4s;}
+.ctc-cta:hover{border-color:rgba(240,192,96,.8);color:#fff;box-shadow:0 0 35px rgba(240,192,96,.18);}
+.ctc-cta:hover::before{opacity:1;}
 
-footer{text-align:center;padding:1.4rem;background:#030510;border-top:1px solid rgba(240,192,96,.07);font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.4rem,.8vw,.52rem);letter-spacing:.28em;color:rgba(240,192,96,.18);text-transform:uppercase;}
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:195px;opacity:.025;}
-@media(max-width:460px){.info-panel{padding:0 16px;}.sec{padding:50px 16px;}}
-@media(prefers-reduced-motion:reduce){.star,.sstar,.aurora,.sh .sl,.lrays{animation:none!important;}.info-panel,.rv,.rvl{transition:opacity .3s!important;transform:none!important;}}
+footer{text-align:center;padding:1.4rem;background:#020408;border-top:1px solid rgba(240,192,96,.06);font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.38rem,.76vw,.5rem);letter-spacing:.28em;color:rgba(240,192,96,.16);text-transform:uppercase;}
+
+/* grain */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:195px;opacity:.024;}
+
+@media(max-width:460px){
+  .info-panel{padding:0 16px;}
+  .sec{padding:48px 16px;}
+  .hero-btns{flex-direction:column;gap:.6rem;}
+  .ctc-cards{flex-direction:column;align-items:center;}
+}
+@media(prefers-reduced-motion:reduce){
+  .star,.sstar,.aurora,.sh .sl{animation:none!important;}
+  .rv,.proj-card,.edc,.aw,.ei2,.ctc-card{transition:opacity .3s ease!important;transform:none!important;}
+}
 </style>
 </head>
 <body>
 
 <canvas id="bgC"></canvas>
 <canvas id="ptC"></canvas>
-<div class="lrays"></div>
+<div id="lrays"><canvas id="rayC"></canvas></div>
+<div class="vignette"></div>
 
 <nav id="nav">
   <a href="#" class="nlogo">藤澤</a>
   <ul class="nlinks">
-    <li><a href="#about-sec">About</a></li>
     <li><a href="#exp-sec">Experience</a></li>
-    <li><a href="#proj-sec">Projects</a></li>
     <li><a href="#cred-sec">Education</a></li>
     <li><a href="#ctc-sec">Contact</a></li>
   </ul>
 </nav>
 
-<!-- FIXED PARALLAX SCENE -->
+<!-- SCENE -->
 <div class="scene" id="scene">
   <div class="sky s-dawn"  id="sDawn"></div>
   <div class="sky s-day"   id="sDay"></div>
@@ -266,6 +340,12 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
   <div class="stars-l" id="stL"></div>
   <div class="sun" id="sunEl"></div>
   <div class="moon" id="moonEl"></div>
+
+  <!-- IMPROVEMENT 4: 3 fog layers at different depths -->
+  <div class="fog-layer" id="fog1"></div>
+  <div class="fog-layer" id="fog2"></div>
+  <div class="fog-layer" id="fog3"></div>
+
   <div class="mt" id="mtB">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 560" preserveAspectRatio="none" style="width:100%;display:block;">
       <defs><linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8aaec8"/><stop offset="100%" stop-color="#5a88aa"/></linearGradient></defs>
@@ -287,7 +367,6 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
       <polygon fill="url(#gM)" points="0,520 0,340 70,250 130,92 210,250 320,370 400,270 520,60 620,260 730,370 810,250 880,42 990,230 1100,350 1180,210 1220,72 1310,210 1440,310 1440,520"/>
     </svg>
   </div>
-  <div class="mist" id="mist"></div>
   <div class="mt" id="mtF">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 420" preserveAspectRatio="none" style="width:100%;display:block;">
       <defs><linearGradient id="gF" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#182e22"/><stop offset="100%" stop-color="#0b1810"/></linearGradient></defs>
@@ -310,13 +389,13 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
   <div id="ssWrap"></div>
 </div>
 
-<!-- SCROLL SPACE WITH STICKY INFO PANELS -->
+<!-- SCROLL SPACE WITH INFO PANELS -->
 <div id="scrollSpace">
 
-  <!-- PANEL 1: HERO (Dawn → Day) -->
+  <!-- P1: HERO (Dawn) -->
   <div style="height:100vh;position:relative;">
-    <div class="info-stage">
-      <div class="info-panel" id="p1">
+    <div class="info-stage"><div class="info-panel" id="p1">
+      <div>
         <div class="hero-kana">ソフトウェアエンジニア ・ バンコク</div>
         <h1 class="hero-name">Reevan<br><span class="acc">D'Souza</span></h1>
         <div class="hero-div"></div>
@@ -327,13 +406,13 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
           <a href="#ctc-sec" class="btn-b">Get In Touch</a>
         </div>
       </div>
-    </div>
+    </div></div>
   </div>
 
-  <!-- PANEL 2: ABOUT + STATS (Day sky) -->
+  <!-- P2: ABOUT (Day) -->
   <div style="height:100vh;position:relative;">
-    <div class="info-stage">
-      <div class="info-panel" id="p2">
+    <div class="info-stage"><div class="info-panel" id="p2">
+      <div class="about-wrap">
         <div class="pan-label">01 · プロフィール</div>
         <h2 class="pan-h">About <span class="g">Me</span><span class="jps">自己紹介</span></h2>
         <div class="about-grid">
@@ -349,154 +428,537 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
           </div>
         </div>
       </div>
-    </div>
+    </div></div>
   </div>
 
-  <!-- PANEL 3: SKILLS (Dusk sky) -->
+  <!-- P3: SKILLS (Dusk) -->
   <div style="height:100vh;position:relative;">
-    <div class="info-stage">
-      <div class="info-panel" id="p3">
+    <div class="info-stage"><div class="info-panel" id="p3">
+      <div class="skills-wrap">
         <div class="pan-label">02 · スキル</div>
         <h2 class="pan-h">Tech <span class="g">Stack</span><span class="jps">技術スタック</span></h2>
-        <div class="skills-wrap">
-          <div class="sk-cat"><div class="sk-name">Software &amp; Validation</div><div class="pills"><span class="pill">Test Program Design</span><span class="pill">Firmware Validation</span><span class="pill">Root Cause Analysis</span><span class="pill">Regression Testing</span><span class="pill">Python</span><span class="pill">Bash</span><span class="pill">SQL</span></div></div>
-          <div class="sk-cat"><div class="sk-name">Cloud &amp; DevOps</div><div class="pills"><span class="pill">AWS — EC2, S3, IAM, CloudWatch</span><span class="pill">Azure</span><span class="pill">Docker</span><span class="pill">Kubernetes</span><span class="pill">Red Hat Linux</span><span class="pill">CI/CD</span><span class="pill">Prometheus</span><span class="pill">Grafana</span></div></div>
-          <div class="sk-cat"><div class="sk-name">Integration &amp; Automation</div><div class="pills"><span class="pill">System Integration</span><span class="pill">UiPath RPA</span><span class="pill">MapR</span><span class="pill">Greenplum</span><span class="pill">ETL Pipelines</span><span class="pill">ERP / SCM</span></div></div>
-          <div class="sk-cat"><div class="sk-name">Engineering Practice</div><div class="pills"><span class="pill">Agile / Scrum</span><span class="pill">Sprint Planning</span><span class="pill">Stakeholder Management</span><span class="pill">Technical Documentation</span><span class="pill">Cross-functional Leadership</span></div></div>
-        </div>
+        <div class="sk-cat"><div class="sk-name">Software &amp; Validation</div><div class="pills"><span class="pill">Test Program Design</span><span class="pill">Firmware Validation</span><span class="pill">Root Cause Analysis</span><span class="pill">Regression Testing</span><span class="pill">Python</span><span class="pill">Bash</span><span class="pill">SQL</span></div></div>
+        <div class="sk-cat"><div class="sk-name">Cloud &amp; DevOps</div><div class="pills"><span class="pill">AWS — EC2, S3, IAM, CloudWatch</span><span class="pill">Azure</span><span class="pill">Docker</span><span class="pill">Kubernetes</span><span class="pill">Red Hat Linux</span><span class="pill">CI/CD</span><span class="pill">Prometheus</span><span class="pill">Grafana</span></div></div>
+        <div class="sk-cat"><div class="sk-name">Integration &amp; Automation</div><div class="pills"><span class="pill">System Integration</span><span class="pill">UiPath RPA</span><span class="pill">MapR</span><span class="pill">Greenplum</span><span class="pill">ETL Pipelines</span><span class="pill">ERP / SCM</span></div></div>
+        <div class="sk-cat"><div class="sk-name">Engineering Practice</div><div class="pills"><span class="pill">Agile / Scrum</span><span class="pill">Stakeholder Management</span><span class="pill">Technical Documentation</span><span class="pill">Cross-functional Leadership</span></div></div>
       </div>
-    </div>
+    </div></div>
   </div>
 
-  <!-- PANEL 4: EXPERIENCE PREVIEW (Night sky) -->
+  <!-- P4: EXPERIENCE (Night) -->
   <div style="height:100vh;position:relative;">
-    <div class="info-stage">
-      <div class="info-panel" id="p4">
+    <div class="info-stage"><div class="info-panel" id="p4">
+      <div class="exp-wrap">
         <div class="pan-label">03 · 経歴</div>
         <h2 class="pan-h">Work <span class="g">Experience</span><span class="jps">職務経歴</span></h2>
-        <div class="exp-wrap">
-          <div class="tl">
-            <div class="ei"><div class="er">Software Validation Engineer</div><div class="ec">Cal-Comp Electronics (Thailand)</div><div class="em">Sep 2024 – Present &nbsp;·&nbsp; Bangkok, TH</div></div>
-            <div class="ei"><div class="er">Solution Integrator</div><div class="ec">Ericsson</div><div class="em">Jun 2023 – Sep 2024 &nbsp;·&nbsp; Bangkok, TH</div></div>
-            <div class="ei"><div class="er">Associate Solution Integrator</div><div class="ec">Ericsson</div><div class="em">Aug 2021 – Jun 2023 &nbsp;·&nbsp; Bangalore, IN</div></div>
-            <div class="ei"><div class="er">Automation Engineer</div><div class="ec">EOX Vantage</div><div class="em">Jan 2021 – Jul 2021 &nbsp;·&nbsp; Remote</div></div>
-          </div>
-          <p style="font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.48rem,.92vw,.6rem);letter-spacing:.3em;color:rgba(240,192,96,.45);text-transform:uppercase;margin-top:1.5rem;">↓ Scroll for full details</p>
+        <div class="tl">
+          <div class="ei"><div class="er">Software Validation Engineer</div><div class="ec">Cal-Comp Electronics (Thailand)</div><div class="em">Sep 2024 – Present · Bangkok, TH</div></div>
+          <div class="ei"><div class="er">Solution Integrator</div><div class="ec">Ericsson</div><div class="em">Jun 2023 – Sep 2024 · Bangkok, TH</div></div>
+          <div class="ei"><div class="er">Associate Solution Integrator</div><div class="ec">Ericsson</div><div class="em">Aug 2021 – Jun 2023 · Bangalore, IN</div></div>
+          <div class="ei"><div class="er">Automation Engineer</div><div class="ec">EOX Vantage</div><div class="em">Jan 2021 – Jul 2021 · Remote</div></div>
         </div>
+        <p style="font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.44rem,.86vw,.58rem);letter-spacing:.28em;color:rgba(240,192,96,.4);text-transform:uppercase;margin-top:1.4rem;">↓ Scroll for full details</p>
       </div>
-    </div>
+    </div></div>
   </div>
 
-  <!-- PANEL 5: PROJECTS + CONTACT teaser (Deep Night) -->
+  <!-- P5: PROJECTS (Deep Night) -->
   <div style="height:100vh;position:relative;">
-    <div class="info-stage">
-      <div class="info-panel" id="p5">
+    <div class="info-stage"><div class="info-panel" id="p5">
+      <div class="proj-wrap">
         <div class="pan-label">04 · 実績</div>
         <h2 class="pan-h">Key <span class="g">Projects</span><span class="jps">主なプロジェクト</span></h2>
         <div class="proj-grid">
-          <div class="proj-card"><div class="pe">Telecom · Cloud</div><div class="pn">AT&amp;T Prepaid BSS Integration</div><div class="pd">End-to-end BSS integration for AT&amp;T's prepaid platform at Ericsson. Zero critical post-launch defects.</div><div class="ptags"><span class="ptag">MapR</span><span class="ptag">Red Hat Linux</span><span class="ptag">CI/CD</span></div></div>
-          <div class="proj-card"><div class="pe">Cloud Migration</div><div class="pn">Telecom Analytics — AWS</div><div class="pd">Led full AWS migration of Ericsson's analytics reporting stack. 99%+ uptime during live cutover.</div><div class="ptags"><span class="ptag">AWS</span><span class="ptag">Greenplum</span><span class="ptag">Python</span></div></div>
+          <div class="proj-card"><div class="pe">Telecom · Cloud</div><div class="pn">AT&amp;T Prepaid BSS Integration</div><div class="pd">End-to-end BSS integration for AT&amp;T at Ericsson. Zero critical post-launch defects. <em>BSS SW Achievement Award 2022.</em></div><div class="ptags"><span class="ptag">MapR</span><span class="ptag">Red Hat Linux</span><span class="ptag">CI/CD</span></div></div>
+          <div class="proj-card"><div class="pe">Cloud Migration</div><div class="pn">Telecom Analytics — AWS</div><div class="pd">Led full AWS migration of Ericsson's analytics reporting stack. 99%+ uptime maintained during live cutover.</div><div class="ptags"><span class="ptag">AWS</span><span class="ptag">Greenplum</span><span class="ptag">Python</span></div></div>
           <div class="proj-card"><div class="pe">RPA · ERP</div><div class="pn">ERP Automation Suite</div><div class="pd">5+ UiPath bots automating ERP/SCM workflows — 75% manual load reduction across finance &amp; ops.</div><div class="ptags"><span class="ptag">UiPath</span><span class="ptag">ERP</span><span class="ptag">Python</span></div></div>
-          <div class="proj-card"><div class="pe">Manufacturing</div><div class="pn">Firmware Validation Pipeline</div><div class="pd">Automated 30% of test config steps via Python/Bash. 3+ product lines validated across shifts.</div><div class="ptags"><span class="ptag">EMS</span><span class="ptag">Firmware</span><span class="ptag">Bash</span></div></div>
+          <div class="proj-card"><div class="pe">Manufacturing</div><div class="pn">Firmware Validation Pipeline</div><div class="pd">Automated 30% of test config steps via Python/Bash. 3+ product lines validated per release cycle.</div><div class="ptags"><span class="ptag">EMS</span><span class="ptag">Firmware</span><span class="ptag">Bash</span></div></div>
         </div>
         <div class="ctc-mini">
           <span class="ctc-label">Contact</span>
-          <a href="mailto:reevan5dsouza@gmail.com" class="ctc-link">reevan5dsouza@gmail.com</a>
+          <a href="/cdn-cgi/l/email-protection#0173646477606f3465726e747b6041666c60686d2f626e6c" class="ctc-link"><span class="__cf_email__" data-cfemail="1b697e7e6d7a752e7f68746e617a5b7c767a727735787476">[email&#160;protected]</span></a>
           <a href="https://linkedin.com/in/reevan-dsouza3a36511a0" target="_blank" class="ctc-link">LinkedIn</a>
         </div>
       </div>
-    </div>
+    </div></div>
   </div>
 
-</div><!-- /scrollSpace -->
+</div>
 
 <!-- UI -->
 <div class="tdots"><div class="td on" id="d0"></div><div class="td" id="d1"></div><div class="td" id="d2"></div><div class="td" id="d3"></div><div class="td" id="d4"></div></div>
 <div class="pb" id="pb"></div>
 <div class="sh" id="sh"><span>scroll · 下へ</span><div class="sl"></div></div>
 
-<!-- FULL PORTFOLIO BELOW PARALLAX -->
+<!-- FULL PORTFOLIO BELOW -->
 <div id="port">
 
-  <!-- FULL EXPERIENCE -->
-  <section class="sec" id="exp-sec">
+  <!-- ═══ EXPERIENCE — Interactive 3D ═══ -->
+  <section class="sec" id="exp-sec" style="overflow:visible;">
+    <style>
+    /* ── EXP WRAPPER ── */
+    .exp-layout{display:grid;grid-template-columns:260px 1fr;gap:0;max-width:1060px;margin:0 auto;min-height:540px;perspective:1200px;}
+    @media(max-width:760px){.exp-layout{grid-template-columns:1fr;min-height:auto;}}
+
+    /* ── SIDEBAR TABS ── */
+    .exp-tabs{display:flex;flex-direction:column;border-right:1px solid rgba(240,192,96,.12);padding-right:0;position:relative;}
+    @media(max-width:760px){
+      .exp-tabs{flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid rgba(240,192,96,.12);padding-bottom:0;gap:0;scrollbar-width:none;}
+      .exp-tabs::-webkit-scrollbar{display:none;}
+    }
+    /* vertical gold line that slides to active tab */
+    .exp-tabs::after{
+      content:'';position:absolute;right:-1px;top:0;width:2px;
+      height:var(--tab-h,72px);
+      background:linear-gradient(180deg,transparent,var(--gold),transparent);
+      transform:translateY(var(--tab-y,0px));
+      transition:transform .45s cubic-bezier(.4,0,.2,1),height .45s;
+      box-shadow:0 0 12px rgba(240,192,96,.6);
+    }
+    @media(max-width:760px){
+      .exp-tabs::after{display:none;}
+    }
+
+    .exp-tab{
+      padding:clamp(14px,2vh,22px) clamp(16px,2.5vw,28px);
+      cursor:pointer;
+      border:none;background:none;text-align:left;
+      position:relative;
+      transition:background .3s;
+      border-radius:0;
+      flex-shrink:0;
+    }
+    .exp-tab:hover{background:rgba(240,192,96,.04);}
+    .exp-tab.active{background:rgba(240,192,96,.07);}
+    @media(max-width:760px){
+      .exp-tab{padding:12px 18px;border-bottom:2px solid transparent;}
+      .exp-tab.active{border-bottom:2px solid var(--gold);background:rgba(240,192,96,.06);}
+    }
+    .exp-tab-role{
+      font-family:'Shippori Mincho',serif;font-weight:400;
+      font-size:clamp(.78rem,1.5vw,.95rem);
+      color:rgba(215,230,248,.7);
+      line-height:1.25;
+      transition:color .3s;
+      white-space:nowrap;
+    }
+    .exp-tab.active .exp-tab-role{color:#fff;}
+    .exp-tab-co{
+      font-family:'Noto Serif JP',serif;font-weight:200;
+      font-size:clamp(.44rem,.82vw,.56rem);
+      letter-spacing:.18em;
+      color:rgba(240,192,96,.55);
+      margin-top:.28rem;
+      white-space:nowrap;
+    }
+    .exp-tab-yr{
+      font-family:'Noto Serif JP',serif;font-weight:200;
+      font-size:clamp(.38rem,.7vw,.5rem);
+      letter-spacing:.12em;
+      color:var(--dim);
+      margin-top:.14rem;
+      opacity:.7;
+    }
+
+    /* ── CARD PANEL ── */
+    .exp-cards{position:relative;padding:clamp(20px,3.5vw,40px) clamp(22px,4vw,48px);}
+    @media(max-width:760px){padding:20px 4px;}
+
+    .exp-card{
+      position:absolute;inset:clamp(20px,3.5vw,40px) clamp(22px,4vw,48px);
+      opacity:0;
+      pointer-events:none;
+      transform:translateX(28px) rotateY(-6deg);
+      transform-origin:left center;
+      transform-style:preserve-3d;
+      transition:opacity .55s ease, transform .55s cubic-bezier(.4,0,.2,1);
+    }
+    .exp-card.active{
+      opacity:1;pointer-events:auto;
+      transform:translateX(0) rotateY(0deg);
+    }
+    .exp-card.exit{
+      opacity:0;
+      transform:translateX(-20px) rotateY(4deg);
+      transition:opacity .3s ease, transform .3s ease;
+    }
+    @media(max-width:760px){
+      .exp-card{position:relative;inset:auto;padding:0;transform:translateY(16px);transition:opacity .5s,transform .5s;}
+      .exp-card.active{transform:translateY(0);}
+      .exp-card.exit{transform:translateY(-10px);}
+      .exp-cards{padding:20px 0 0 0;min-height:480px;}
+    }
+
+    /* card header */
+    .ec-header{
+      display:flex;align-items:flex-start;gap:1.1rem;
+      margin-bottom:1.4rem;
+      padding-bottom:1.2rem;
+      border-bottom:1px solid rgba(240,192,96,.1);
+    }
+    /* 3D logo badge */
+    .ec-badge{
+      width:clamp(44px,6vw,58px);height:clamp(44px,6vw,58px);
+      border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:clamp(1.2rem,2.5vw,1.6rem);
+      flex-shrink:0;
+      position:relative;
+      transform-style:preserve-3d;
+      transition:transform .4s ease;
+      cursor:default;
+    }
+    .ec-badge::before{
+      content:'';position:absolute;inset:0;border-radius:10px;
+      background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);
+    }
+    .ec-badge::after{
+      content:'';position:absolute;inset:0;border-radius:10px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.15), 0 8px 24px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.06);
+    }
+    .exp-card.active .ec-badge{transform:rotateY(8deg) rotateX(-4deg);}
+
+    .ec-meta{flex:1;}
+    .ec-role{
+      font-family:'Shippori Mincho',serif;font-weight:400;
+      font-size:clamp(1rem,2.2vw,1.35rem);
+      color:#fff;letter-spacing:.04em;line-height:1.2;
+    }
+    .ec-co{
+      font-family:'Cormorant Garamond',serif;font-style:italic;
+      font-size:clamp(.88rem,1.6vw,1.05rem);
+      color:var(--gold);margin:.2rem 0 .1rem;
+    }
+    .ec-date{
+      font-family:'Noto Serif JP',serif;font-weight:200;
+      font-size:clamp(.42rem,.82vw,.56rem);
+      letter-spacing:.18em;color:var(--dim);
+    }
+
+    /* award badge inline */
+    .ec-award{
+      display:inline-flex;align-items:center;gap:.4rem;
+      font-family:'Noto Serif JP',serif;font-weight:200;
+      font-size:clamp(.4rem,.75vw,.52rem);letter-spacing:.16em;text-transform:uppercase;
+      color:rgba(240,192,96,.82);
+      border:1px solid rgba(240,192,96,.28);
+      padding:.22rem .7rem;margin-left:.6rem;
+      vertical-align:middle;
+      animation:awardPulse 3s ease-in-out infinite;
+    }
+    @keyframes awardPulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 14px rgba(240,192,96,.22)}}
+
+    /* metric chips row */
+    .ec-metrics{
+      display:flex;flex-wrap:wrap;gap:.6rem;
+      margin-bottom:1.2rem;
+    }
+    .ec-metric{
+      display:flex;align-items:center;gap:.5rem;
+      border:1px solid rgba(126,200,227,.18);
+      background:rgba(126,200,227,.04);
+      padding:.32rem .85rem;
+      position:relative;overflow:hidden;
+    }
+    .ec-metric::before{
+      content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+      background:linear-gradient(180deg,transparent,var(--lb),transparent);
+    }
+    .ec-metric-n{
+      font-family:'Shippori Mincho',serif;font-weight:400;
+      font-size:clamp(.92rem,1.8vw,1.15rem);
+      background:linear-gradient(135deg,#b8e8f8,#7ec8e3);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .ec-metric-l{
+      font-family:'Noto Serif JP',serif;font-weight:200;
+      font-size:clamp(.4rem,.76vw,.52rem);letter-spacing:.14em;
+      color:var(--dim);text-transform:uppercase;
+    }
+
+    /* bullet list */
+    .ec-bullets{list-style:none;display:flex;flex-direction:column;gap:.5rem;}
+    .ec-bullets li{
+      display:flex;gap:.75rem;align-items:flex-start;
+      font-family:'Cormorant Garamond',serif;
+      font-size:clamp(.86rem,1.6vw,1rem);
+      line-height:1.78;color:var(--dim);
+      padding:.55rem .75rem;
+      border:1px solid transparent;
+      transition:border-color .3s,background .3s,transform .3s;
+      cursor:default;
+    }
+    .ec-bullets li:hover{
+      border-color:rgba(240,192,96,.1);
+      background:rgba(240,192,96,.03);
+      transform:translateX(4px);
+      color:var(--text);
+    }
+    .ec-bullets li::before{
+      content:'›';
+      color:rgba(240,192,96,.65);font-size:1.05em;line-height:1.75;
+      flex-shrink:0;
+    }
+    .ec-bullets li strong{color:rgba(255,215,100,.86);font-style:normal;}
+
+    /* stack tags */
+    .ec-stack{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:1rem;padding-top:.9rem;border-top:1px solid rgba(240,192,96,.07);}
+    .ec-tag{
+      font-family:'Noto Serif JP',serif;font-weight:200;
+      font-size:clamp(.38rem,.72vw,.5rem);letter-spacing:.12em;
+      padding:.2rem .6rem;
+      border:1px solid rgba(240,192,96,.18);
+      color:rgba(240,192,96,.65);
+      transition:all .3s;
+    }
+    .ec-tag:hover{border-color:rgba(240,192,96,.5);color:var(--gold);}
+
+    /* mobile card height reset */
+    @media(max-width:760px){
+      .exp-layout{gap:0;}
+      .exp-card{min-height:auto;}
+    }
+    </style>
+
     <div class="si">
       <div class="sk2 rv">03 · 経歴</div>
-      <h2 class="sh2 rv">Full <span class="g">Experience</span><span class="jps">職務経歴 詳細</span></h2>
-      <div class="tl2">
-        <div class="ei2 rv d1">
-          <div class="er2">Software Validation Engineer</div>
-          <div class="ec2">Cal-Comp Electronics (Thailand)</div>
-          <div class="em2">Sep 2024 – Present &nbsp;·&nbsp; Bangkok, TH</div>
-          <ul class="eb">
-            <li>Design, set up, and execute test programs for EMS and firmware validation across 3+ product lines, increasing pre-release test coverage and reducing defect escape rate.</li>
-            <li>Automated repetitive test setup steps using Python/Bash scripts, cutting average test program configuration time by ~30% and improving reproducibility across shifts.</li>
-            <li>Lead real-time troubleshooting and root-cause analysis for production firmware issues, consistently resolving critical defects within a 24-hour SLA.</li>
-            <li>Translate structured customer feedback into 12+ validated firmware improvement requests per release cycle, acting as technical bridge between end-users and the development team.</li>
-            <li>Coordinate software release validation with QA and IT teams, improving rollout reliability and reducing post-release rollback incidents.</li>
-          </ul>
+      <h2 class="sh2 rv">Work <span class="g">Experience</span><span class="jps">職務経歴 詳細</span></h2>
+
+      <div class="exp-layout rv">
+        <!-- TABS -->
+        <div class="exp-tabs" id="expTabs">
+          <button class="exp-tab active" data-idx="0">
+            <div class="exp-tab-role">Software Validation Eng.</div>
+            <div class="exp-tab-co">Cal-Comp Electronics</div>
+            <div class="exp-tab-yr">2024 – Present</div>
+          </button>
+          <button class="exp-tab" data-idx="1">
+            <div class="exp-tab-role">Solution Integrator</div>
+            <div class="exp-tab-co">Ericsson</div>
+            <div class="exp-tab-yr">2023 – 2024</div>
+          </button>
+          <button class="exp-tab" data-idx="2">
+            <div class="exp-tab-role">Assoc. Solution Integrator</div>
+            <div class="exp-tab-co">Ericsson</div>
+            <div class="exp-tab-yr">2021 – 2023</div>
+          </button>
+          <button class="exp-tab" data-idx="3">
+            <div class="exp-tab-role">Automation Engineer</div>
+            <div class="exp-tab-co">EOX Vantage</div>
+            <div class="exp-tab-yr">2021</div>
+          </button>
         </div>
-        <div class="ei2 rv d2">
-          <div class="er2">Solution Integrator</div>
-          <div class="ec2">Ericsson</div>
-          <div class="em2">Jun 2023 – Sep 2024 &nbsp;·&nbsp; Bangkok, TH</div>
-          <ul class="eb">
-            <li>Led end-to-end AWS cloud migration of Ericsson's telecom analytics reporting platform, improving system scalability and reducing on-prem infrastructure overhead.</li>
-            <li>Maintained and monitored MapR and Greenplum data platforms on Red Hat Linux, sustaining 99%+ uptime across systems supporting millions of subscriber records.</li>
-            <li>Implemented CI/CD pipeline improvements using Agile/Scrum, increasing deployment frequency by 40% and reducing integration cycle time across global teams.</li>
-            <li>Designed and executed integration test plans validating data flow accuracy between mediation, analytics, and reporting layers in hybrid on-prem/cloud environments.</li>
-            <li>Earned <strong>Ericsson Awesome Award (2023)</strong> for cross-functional leadership and outstanding delivery in multi-region system support.</li>
-          </ul>
-        </div>
-        <div class="ei2 rv d3">
-          <div class="er2">Associate Solution Integrator</div>
-          <div class="ec2">Ericsson</div>
-          <div class="em2">Aug 2021 – Jun 2023 &nbsp;·&nbsp; Bangalore, IN</div>
-          <ul class="eb">
-            <li>Supported validation and integration of telecom mediation and analytics platforms handling 10M+ subscriber records in a hybrid cloud environment.</li>
-            <li>Automated recurring operational workflows using Python and Bash, reducing manual intervention by ~40% and improving platform availability metrics.</li>
-            <li>Delivered BSS integration for AT&amp;T's prepaid platform on time and within scope — recognized with the <strong>BSS SW Achievement Award (2022)</strong>.</li>
-            <li>Acted as Tier-2 escalation point for production incidents, coordinating root-cause investigation across dev, ops, and business stakeholders.</li>
-            <li>Authored and maintained technical runbooks and test validation reports used by global engineering teams.</li>
-          </ul>
-        </div>
-        <div class="ei2 rv d4">
-          <div class="er2">Automation Engineer</div>
-          <div class="ec2">EOX Vantage</div>
-          <div class="em2">Jan 2021 – Jul 2021 &nbsp;·&nbsp; Remote</div>
-          <ul class="eb">
-            <li>Designed and deployed 5+ RPA bots using UiPath, automating ERP/SCM workflows and reducing manual processing load by 75% across finance and operations teams.</li>
-            <li>Collaborated with business analysts to define automation logic, write test cases, and validate bot behaviour against edge-case scenarios before production release.</li>
-            <li>Built maintainable, well-documented automation modules with structured error handling, enabling smooth handoffs by non-technical stakeholders.</li>
-          </ul>
-        </div>
-      </div>
+
+        <!-- CARDS -->
+        <div class="exp-cards" id="expCards">
+
+          <!-- Card 0: Cal-Comp -->
+          <div class="exp-card active" data-idx="0">
+            <div class="ec-header">
+              <div class="ec-badge" style="background:linear-gradient(135deg,#1a3a5c,#0d2240);">🔧</div>
+              <div class="ec-meta">
+                <div class="ec-role">Software Validation Engineer</div>
+                <div class="ec-co">Cal-Comp Electronics (Thailand)</div>
+                <div class="ec-date">Sep 2024 – Present &nbsp;·&nbsp; Bangkok, TH &nbsp;·&nbsp; Current Role</div>
+              </div>
+            </div>
+            <div class="ec-metrics">
+              <div class="ec-metric"><span class="ec-metric-n">3+</span><span class="ec-metric-l">Product Lines</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">~30%</span><span class="ec-metric-l">Faster Config</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">24h</span><span class="ec-metric-l">SLA Target</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">12+</span><span class="ec-metric-l">Feedback/Cycle</span></div>
+            </div>
+            <ul class="ec-bullets">
+              <li>Design, set up, and execute test programs for EMS and firmware validation across 3+ product lines, increasing pre-release test coverage and reducing defect escape rate.</li>
+              <li>Automated repetitive test setup steps using <strong>Python/Bash</strong> scripts, cutting average configuration time by ~30% and improving reproducibility across shifts.</li>
+              <li>Lead real-time troubleshooting and root-cause analysis for production firmware issues, consistently resolving critical defects within a <strong>24-hour SLA</strong>.</li>
+              <li>Translate structured customer feedback into 12+ validated firmware improvement requests per release cycle — acting as technical bridge between end-users and dev team.</li>
+              <li>Coordinate software release validation with QA and IT teams, improving rollout reliability and reducing post-release rollback incidents.</li>
+            </ul>
+            <div class="ec-stack">
+              <span class="ec-tag">EMS Firmware</span><span class="ec-tag">Python</span><span class="ec-tag">Bash</span><span class="ec-tag">Root Cause Analysis</span><span class="ec-tag">QA Coordination</span><span class="ec-tag">Test Automation</span>
+            </div>
+          </div>
+
+          <!-- Card 1: Ericsson SI -->
+          <div class="exp-card" data-idx="1">
+            <div class="ec-header">
+              <div class="ec-badge" style="background:linear-gradient(135deg,#0a3a2a,#052218);">☁️</div>
+              <div class="ec-meta">
+                <div class="ec-role">Solution Integrator <span class="ec-award">🏆 Awesome Award 2023</span></div>
+                <div class="ec-co">Ericsson</div>
+                <div class="ec-date">Jun 2023 – Sep 2024 &nbsp;·&nbsp; Bangkok, TH</div>
+              </div>
+            </div>
+            <div class="ec-metrics">
+              <div class="ec-metric"><span class="ec-metric-n">99%+</span><span class="ec-metric-l">Uptime SLA</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">+40%</span><span class="ec-metric-l">Deploy Frequency</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">AWS</span><span class="ec-metric-l">Cloud Migration</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">Multi</span><span class="ec-metric-l">Region Teams</span></div>
+            </div>
+            <ul class="ec-bullets">
+              <li>Led end-to-end <strong>AWS cloud migration</strong> of Ericsson's telecom analytics reporting platform, improving system scalability and reducing on-prem infrastructure overhead.</li>
+              <li>Maintained and monitored <strong>MapR and Greenplum</strong> data platforms on Red Hat Linux, sustaining 99%+ uptime across systems supporting millions of subscriber records.</li>
+              <li>Implemented <strong>CI/CD pipeline</strong> improvements using Agile/Scrum, increasing deployment frequency by 40% and reducing integration cycle time across global teams.</li>
+              <li>Designed and executed integration test plans validating data flow accuracy between mediation, analytics, and reporting layers in hybrid on-prem/cloud environments.</li>
+              <li>Earned <strong>Ericsson Awesome Award (2023)</strong> for cross-functional leadership and outstanding delivery in multi-region system support.</li>
+            </ul>
+            <div class="ec-stack">
+              <span class="ec-tag">AWS</span><span class="ec-tag">MapR</span><span class="ec-tag">Greenplum</span><span class="ec-tag">Red Hat Linux</span><span class="ec-tag">CI/CD</span><span class="ec-tag">Agile/Scrum</span><span class="ec-tag">Prometheus</span><span class="ec-tag">Grafana</span>
+            </div>
+          </div>
+
+          <!-- Card 2: Ericsson Assoc -->
+          <div class="exp-card" data-idx="2">
+            <div class="ec-header">
+              <div class="ec-badge" style="background:linear-gradient(135deg,#2a1a3a,#180a28);">🌐</div>
+              <div class="ec-meta">
+                <div class="ec-role">Associate Solution Integrator <span class="ec-award">🏆 BSS Award 2022</span></div>
+                <div class="ec-co">Ericsson</div>
+                <div class="ec-date">Aug 2021 – Jun 2023 &nbsp;·&nbsp; Bangalore, IN</div>
+              </div>
+            </div>
+            <div class="ec-metrics">
+              <div class="ec-metric"><span class="ec-metric-n">10M+</span><span class="ec-metric-l">Subscriber Records</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">~40%</span><span class="ec-metric-l">Manual Reduction</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">AT&amp;T</span><span class="ec-metric-l">BSS Delivery</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">Tier-2</span><span class="ec-metric-l">Escalation</span></div>
+            </div>
+            <ul class="ec-bullets">
+              <li>Supported validation and integration of telecom mediation and analytics platforms handling <strong>10M+ subscriber records</strong> in a hybrid cloud environment.</li>
+              <li>Automated recurring operational workflows using <strong>Python and Bash</strong>, reducing manual intervention by ~40% and improving platform availability metrics.</li>
+              <li>Delivered <strong>BSS integration for AT&amp;T's</strong> prepaid platform on time and within scope — recognized with the BSS SW Achievement Award (2022).</li>
+              <li>Acted as <strong>Tier-2 escalation point</strong> for production incidents, coordinating root-cause investigation across dev, ops, and business stakeholders.</li>
+              <li>Authored and maintained technical runbooks and test validation reports used by global engineering teams.</li>
+            </ul>
+            <div class="ec-stack">
+              <span class="ec-tag">Telecom BSS</span><span class="ec-tag">Python</span><span class="ec-tag">Bash</span><span class="ec-tag">Hybrid Cloud</span><span class="ec-tag">ETL Pipelines</span><span class="ec-tag">Technical Docs</span>
+            </div>
+          </div>
+
+          <!-- Card 3: EOX Vantage -->
+          <div class="exp-card" data-idx="3">
+            <div class="ec-header">
+              <div class="ec-badge" style="background:linear-gradient(135deg,#3a2a0a,#221800);">🤖</div>
+              <div class="ec-meta">
+                <div class="ec-role">Automation Engineer</div>
+                <div class="ec-co">EOX Vantage</div>
+                <div class="ec-date">Jan 2021 – Jul 2021 &nbsp;·&nbsp; Remote</div>
+              </div>
+            </div>
+            <div class="ec-metrics">
+              <div class="ec-metric"><span class="ec-metric-n">75%</span><span class="ec-metric-l">Load Reduced</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">5+</span><span class="ec-metric-l">RPA Bots Built</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">ERP</span><span class="ec-metric-l">Workflow Auto.</span></div>
+              <div class="ec-metric"><span class="ec-metric-n">UiPath</span><span class="ec-metric-l">Platform</span></div>
+            </div>
+            <ul class="ec-bullets">
+              <li>Designed and deployed <strong>5+ RPA bots using UiPath</strong>, automating ERP/SCM workflows and reducing manual processing load by 75% across finance and operations teams.</li>
+              <li>Collaborated with business analysts to define automation logic, write test cases, and validate bot behaviour against edge-case scenarios before production release.</li>
+              <li>Built maintainable, well-documented automation modules with structured error handling, enabling smooth handoffs and ongoing maintenance by non-technical stakeholders.</li>
+            </ul>
+            <div class="ec-stack">
+              <span class="ec-tag">UiPath RPA</span><span class="ec-tag">UiPath Orchestrator</span><span class="ec-tag">ERP/SCM</span><span class="ec-tag">Process Design</span><span class="ec-tag">Test Automation</span>
+            </div>
+          </div>
+
+        </div><!-- /exp-cards -->
+      </div><!-- /exp-layout -->
     </div>
   </section>
 
-  <!-- EDUCATION & CREDS -->
+  <script>
+  /* ── EXPERIENCE TABS ── */
+  (function(){
+    const tabs=document.querySelectorAll('.exp-tab');
+    const cards=document.querySelectorAll('.exp-card');
+    const tabsEl=document.getElementById('expTabs');
+    let current=0;
+
+    function updateSlider(idx){
+      // Move the gold slider to the active tab
+      const tab=tabs[idx];
+      if(!tab)return;
+      const tabsRect=tabsEl.getBoundingClientRect();
+      const tabRect=tab.getBoundingClientRect();
+      if(window.innerWidth>760){
+        tabsEl.style.setProperty('--tab-y',(tabRect.top-tabsRect.top)+'px');
+        tabsEl.style.setProperty('--tab-h',tabRect.height+'px');
+      }
+    }
+
+    function switchTo(idx){
+      if(idx===current)return;
+      // exit current card
+      cards[current].classList.remove('active');
+      cards[current].classList.add('exit');
+      setTimeout(()=>cards[current].classList.remove('exit'),350);
+      tabs[current].classList.remove('active');
+      current=idx;
+      // enter new card
+      cards[current].classList.add('active');
+      tabs[current].classList.add('active');
+      updateSlider(current);
+    }
+
+    tabs.forEach(tab=>{
+      tab.addEventListener('click',()=>switchTo(+tab.dataset.idx));
+    });
+
+    // Mouse-tilt on cards (desktop)
+    cards.forEach(card=>{
+      card.addEventListener('mousemove',e=>{
+        if(!card.classList.contains('active'))return;
+        const r=card.getBoundingClientRect();
+        const x=(e.clientX-r.left)/r.width-.5;
+        const y=(e.clientY-r.top)/r.height-.5;
+        card.style.transform=`perspective(900px) rotateY(${x*6}deg) rotateX(${-y*4}deg) translateZ(4px)`;
+      });
+      card.addEventListener('mouseleave',()=>{
+        card.style.transform='';
+      });
+    });
+
+    // Touch swipe support (mobile)
+    let touchX=0;
+    const cardsEl=document.getElementById('expCards');
+    cardsEl.addEventListener('touchstart',e=>touchX=e.touches[0].clientX,{passive:true});
+    cardsEl.addEventListener('touchend',e=>{
+      const dx=e.changedTouches[0].clientX-touchX;
+      if(Math.abs(dx)>50){
+        const next=dx<0?Math.min(current+1,tabs.length-1):Math.max(current-1,0);
+        switchTo(next);
+      }
+    },{passive:true});
+
+    // Init slider position
+    setTimeout(()=>updateSlider(0),100);
+    window.addEventListener('resize',()=>updateSlider(current));
+  })();
+  </script>
+
   <section class="sec" id="cred-sec">
     <div class="si">
       <div class="sk2 rv">05 · 資格と学歴</div>
       <h2 class="sh2 rv">Education &amp; <span class="g">Credentials</span><span class="jps">学歴・資格</span></h2>
       <div class="ceg">
         <div>
-          <p class="sk2 rv" style="margin-bottom:1.2rem;">Education · 学歴</p>
+          <p class="sk2 rv" style="margin-bottom:1.1rem;">Education · 学歴</p>
           <div class="edc rv d1"><div class="edg">Post Graduate Program — Cloud Computing</div><div class="eds">Caltech</div><div class="edy">2023 · Online</div></div>
           <div class="edc rv d2"><div class="edg">B.E. — Computer Science &amp; Engineering</div><div class="eds">Sahyadri College of Engineering &amp; Management</div><div class="edy">2016 – 2020 · Mangalore, India</div></div>
-          <p class="sk2 rv" style="margin:1.8rem 0 1.2rem;">Awards · 受賞歴</p>
+          <p class="sk2 rv" style="margin:1.6rem 0 1.1rem;">Awards · 受賞歴</p>
           <div class="aw rv d1"><div class="awi">🏆</div><div class="awt"><strong>Ericsson Awesome Award, 2023</strong><br>Recognized for leadership and performance excellence in global multi-region system support.</div></div>
           <div class="aw rv d2"><div class="awi">🏆</div><div class="awt"><strong>BSS SW Achievement Award, 2022</strong><br>Successfully delivered AT&amp;T prepaid BSS integration on time and to full specification.</div></div>
           <div class="aw rv d3"><div class="awi">⚡</div><div class="awt"><strong>75% Manual Load Reduction, 2021</strong><br>Eliminated three-quarters of manual ERP processing through intelligent RPA deployment.</div></div>
         </div>
         <div>
-          <p class="sk2 rv" style="margin-bottom:1.2rem;">Certifications · 資格</p>
+          <p class="sk2 rv" style="margin-bottom:1.1rem;">Certifications · 資格</p>
           <div class="cr rv d1"><div class="cn">Product Management: Building AI-Powered Products</div><div class="ci">Coursera · 2025</div></div>
           <div class="cr rv d2"><div class="cn">Post Graduate Program in Cloud Computing</div><div class="ci">Caltech · 2023</div></div>
           <div class="cr rv d3"><div class="cn">Integration Engineer — Global Assessment</div><div class="ci">Ericsson · 2023</div></div>
           <div class="cr rv d4"><div class="cn">Container Fundamentals</div><div class="ci">Cognixia · 2021</div></div>
-          <p class="sk2 rv" style="margin:1.8rem 0 1.2rem;">Languages · 言語</p>
-          <div class="pills rv d1" style="gap:.4rem;">
+          <p class="sk2 rv" style="margin:1.6rem 0 1.1rem;">Languages · 言語</p>
+          <div class="pills rv d1" style="gap:.38rem;">
             <span class="pill">English — Fluent</span><span class="pill">Hindi — Fluent</span><span class="pill">Kannada — Fluent</span><span class="pill">Konkani — Native</span><span class="pill">Thai — Basic</span>
           </div>
         </div>
@@ -504,18 +966,34 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
     </div>
   </section>
 
-  <!-- CONTACT -->
-  <section class="sec ctc-sec" id="ctc-sec">
+  <!-- IMPROVEMENT 5: Redesigned contact section -->
+  <section class="sec" id="ctc-sec">
     <div class="si">
+      <div class="ctc-ambient">繋</div>
       <div class="ctcin">
         <div class="sk2 rv" style="justify-content:center;">06 · お問い合わせ</div>
         <h2 class="ctch rv">Let's <span>Connect</span></h2>
-        <p class="ctcb rv">Open to new opportunities, collaborations, and conversations about engineering. Based in Bangkok — available within one month.</p>
-        <div class="cls rv">
-          <a href="mailto:reevan5dsouza@gmail.com" class="cl p">✉ reevan5dsouza@gmail.com</a>
-          <a href="https://linkedin.com/in/reevan-dsouza3a36511a0" target="_blank" class="cl">LinkedIn</a>
-          <span class="cl">📍 Bangkok, Thailand</span>
+        <div class="ctc-rule rv"><span>連絡先</span></div>
+        <p class="ctcb rv">Open to new opportunities, collaborations, and conversations about engineering.</p>
+        <p class="ctc-avail rv">Available within 1 month · Bangkok, Thailand</p>
+        <div class="ctc-cards rv">
+          <a href="/cdn-cgi/l/email-protection#ff8d9a9a899e91ca9b8c908a859ebf98929e9693d19c9092" class="ctc-card">
+            <span class="cicon">✉</span>
+            <span class="clabel">Email</span>
+            <span class="__cf_email__" data-cfemail="e290878794838cd786918d979883a2858f838b8ecc818d8f">[email&#160;protected]</span>
+          </a>
+          <a href="https://linkedin.com/in/reevan-dsouza3a36511a0" target="_blank" class="ctc-card">
+            <span class="cicon">💼</span>
+            <span class="clabel">LinkedIn</span>
+            reevan-dsouza
+          </a>
+          <span class="ctc-card">
+            <span class="cicon">📍</span>
+            <span class="clabel">Location</span>
+            Bangkok, Thailand
+          </span>
         </div>
+        <a href="/cdn-cgi/l/email-protection#7e0c1b1b081f104b1a0d110b041f3e19131f1712501d1113" class="ctc-cta rv">Say Hello · 連絡する</a>
       </div>
     </div>
   </section>
@@ -523,58 +1001,102 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 
 <footer>Reevan D'Souza &nbsp;·&nbsp; Portfolio 2025 &nbsp;·&nbsp; 万里の道も一歩から</footer>
 
-<script>
-/* VH */
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+/* ── VH ── */
 function setVh(){document.documentElement.style.setProperty('--vh',window.innerHeight*.01+'px');}
 setVh();window.addEventListener('resize',setVh);
 const mob=window.innerWidth<768||('ontouchstart' in window);
 
-/* BG CANVAS */
+/* ── BACKGROUND CANVAS ── */
 (function(){
   const c=document.getElementById('bgC'),x=c.getContext('2d');let W,H,t=0;
   function r(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;}
   r();window.addEventListener('resize',r);
   function d(){x.clearRect(0,0,W,H);x.fillStyle='#03050d';x.fillRect(0,0,W,H);
-    [{cx:W*.25,cy:H*.15,r:W*.42,col:'rgba(240,192,96,0.025)'},{cx:W*.78,cy:H*.1,r:W*.36,col:'rgba(126,200,227,0.02)'},{cx:W*.5,cy:H*.55,r:W*.58,col:'rgba(28,48,115,0.035)'}].forEach(b=>{
-      const g=x.createRadialGradient(b.cx+Math.sin(t*.38)*W*.02,b.cy+Math.cos(t*.28)*H*.02,0,b.cx,b.cy,b.r);
+    [{cx:W*.25,cy:H*.14,r:W*.42,col:'rgba(240,192,96,0.024)'},{cx:W*.78,cy:H*.09,r:W*.36,col:'rgba(126,200,227,0.019)'},{cx:W*.5,cy:H*.55,r:W*.58,col:'rgba(25,45,110,0.034)'}].forEach(b=>{
+      const g=x.createRadialGradient(b.cx+Math.sin(t*.36)*W*.022,b.cy+Math.cos(t*.27)*H*.022,0,b.cx,b.cy,b.r);
       g.addColorStop(0,b.col);g.addColorStop(1,'transparent');x.fillStyle=g;x.fillRect(0,0,W,H);});
-    t+=.007;requestAnimationFrame(d);}d();
+    t+=.0065;requestAnimationFrame(d);}d();
 })();
 
-/* PARTICLES */
+/* ── PARTICLES ── */
 (function(){
   const c=document.getElementById('ptC'),x=c.getContext('2d');let W,H;
   function r(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;}
   r();window.addEventListener('resize',r);
-  const ps=Array.from({length:mob?50:120},()=>({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-.5)*.15,vy:-(Math.random()*.12+.04),r:Math.random()*1.1+.2,op:Math.random()*.44+.08,g:Math.random()<.14}));
+  const ps=Array.from({length:mob?50:115},()=>({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-.5)*.15,vy:-(Math.random()*.12+.04),r:Math.random()*1.1+.2,op:Math.random()*.42+.07,g:Math.random()<.14}));
   function d(){x.clearRect(0,0,W,H);ps.forEach(p=>{x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fillStyle=p.g?`rgba(240,192,96,${p.op})`:`rgba(175,208,248,${p.op})`;x.fill();p.x+=p.vx;p.y+=p.vy;if(p.y<-5)p.y=H+5;if(p.x<-5)p.x=W+5;if(p.x>W+5)p.x=-5;});requestAnimationFrame(d);}d();
 })();
 
-/* STARS */
+/* ── IMPROVEMENT 4: DYNAMIC LIGHT RAYS CANVAS — redraws per scroll phase ── */
+const rayC=document.getElementById('rayC');
+const rayX=rayC.getContext('2d');
+let RW,RH;
+function resizeRay(){RW=rayC.width=window.innerWidth;RH=rayC.height=window.innerHeight;}
+resizeRay();window.addEventListener('resize',resizeRay);
+
+// Ray configs per phase: {x%, y%, colour, spread, opacity}
+const RAYS={
+  dawn:[
+    {x:.38,y:-.08,col:'rgba(255,180,80,',sp:.28,op:.07},
+    {x:.55,y:-.05,col:'rgba(255,130,60,',sp:.2,op:.05},
+  ],
+  day:[
+    {x:.45,y:-.1,col:'rgba(255,245,200,',sp:.35,op:.08},
+    {x:.65,y:-.06,col:'rgba(200,230,255,',sp:.22,op:.04},
+  ],
+  dusk:[
+    {x:.28,y:-.04,col:'rgba(255,100,50,',sp:.3,op:.09},
+    {x:.5, y:-.08,col:'rgba(180,60,120,',sp:.25,op:.06},
+  ],
+  night:[
+    {x:.22,y:.05,col:'rgba(100,120,220,',sp:.2,op:.04},
+    {x:.5, y:-.02,col:'rgba(60,100,200,',sp:.15,op:.03},
+  ],
+};
+function lerpRay(ra,rb,t){
+  return ra.map((a,i)=>{
+    const b=rb[i]||a;
+    return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,col:a.col,sp:a.sp+(b.sp-a.sp)*t,op:a.op+(b.op-a.op)*t};
+  });
+}
+function drawRays(rays){
+  rayX.clearRect(0,0,RW,RH);
+  rays.forEach(r=>{
+    const cx=r.x*RW,cy=r.y*RH;
+    const g=rayX.createRadialGradient(cx,cy,0,cx,cy,r.sp*RW);
+    g.addColorStop(0,r.col+r.op+')');
+    g.addColorStop(.6,r.col+(r.op*.3)+')');
+    g.addColorStop(1,'transparent');
+    rayX.fillStyle=g;rayX.fillRect(0,0,RW,RH);
+  });
+}
+
+/* ── STARS ── */
 const stL=document.getElementById('stL');
-for(let i=0;i<(mob?70:160);i++){
-  const s=document.createElement('div');s.className='star';const sz=Math.random()*2.1+.35;
+for(let i=0;i<(mob?70:155);i++){
+  const s=document.createElement('div');s.className='star';const sz=Math.random()*2.1+.32;
   s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*72}%;--d:${(Math.random()*4+2).toFixed(1)}s;--dl:${(Math.random()*5).toFixed(1)}s;--mo:${(Math.random()*.32+.1).toFixed(2)};`;
   stL.appendChild(s);}
 
-/* SHOOTING STARS */
+/* ── SHOOTING STARS ── */
 const ssW=document.getElementById('ssWrap');
 [{t:'9%',l:'4%',w:'10vw',r:'-21deg',dl:'0s',dur:'6.5s'},{t:'19%',l:'48%',w:'13vw',r:'-27deg',dl:'4.2s',dur:'7.5s'},{t:'6%',l:'68%',w:'9vw',r:'-17deg',dl:'8.5s',dur:'8.5s'},{t:'28%',l:'28%',w:'10vw',r:'-24deg',dl:'12.5s',dur:'6s'}].forEach(d=>{
   const e=document.createElement('div');e.className='sstar';
   e.style.cssText=`top:${d.t};left:${d.l};width:${d.w};transform:rotate(${d.r});animation-delay:${d.dl};--dur:${d.dur};`;ssW.appendChild(e);});
 
-/* PINES */
+/* ── PINES ── */
 (function(){const g=document.getElementById('pG');let x=0;while(x<1440){const h=48+Math.random()*88,w=11+Math.random()*21;const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',`M${x},162 L${x+w/2},${162-h} L${x+w},162 Z`);g.appendChild(p);x+=w*.68+Math.random()*13;}})();
 
-/* CLOUDS */
+/* ── CLOUDS ── */
 (function(){const wrap=document.getElementById('cldWrap');
   [{l:'-8%',t:'-6%',w:'68%',h:'48%',c1:'rgba(255,195,125,0.1)',c2:'rgba(255,148,78,0.05)',dr:52},{l:'32%',t:'-9%',w:'78%',h:'54%',c1:'rgba(175,208,255,0.07)',c2:'rgba(98,158,238,0.035)',dr:68},{l:'58%',t:'4%',w:'52%',h:'33%',c1:'rgba(255,218,178,0.06)',c2:'transparent',dr:44},{l:'-4%',t:'9%',w:'42%',h:'29%',c1:'rgba(145,188,255,0.04)',c2:'transparent',dr:58}].forEach((c,i)=>{
     const e=document.createElement('div');e.className='cld';
     e.style.cssText=`position:absolute;left:${c.l};top:${c.t};width:${c.w};height:${c.h};background:radial-gradient(ellipse,${c.c1},${c.c2});filter:blur(${38+i*12}px);--dr:${c.dr}s;animation-delay:${i*9}s;`;
     e.id=`cl${i}`;wrap.appendChild(e);});})();
 
-/* PALETTES */
-const pal={dawn:{B:['#7a9abf','#5578a0'],M:['#3e6058','#223a30'],F:['#182e22','#0b1810'],g:'#0a1810',m:.1},day:{B:['#8eb8d0','#609bbf'],M:['#4a7060','#283d32'],F:['#1a3025','#0c1c12'],g:'#0c1810',m:0},dusk:{B:['#9a7090','#6e3a60'],M:['#3e2858','#1e1230'],F:['#180e22','#0a0810'],g:'#0a0810',m:.3},night:{B:['#182040','#0c1030'],M:['#0e1520','#060c12'],F:['#080c10','#020408'],g:'#020408',m:.55}};
+/* ── PALETTES ── */
+const pal={dawn:{B:['#7a9abf','#5578a0'],M:['#3e6058','#223a30'],F:['#182e22','#0b1810'],g:'#0a1810',m:.09},day:{B:['#8eb8d0','#609bbf'],M:['#4a7060','#283d32'],F:['#1a3025','#0c1c12'],g:'#0c1810',m:0},dusk:{B:['#9a7090','#6e3a60'],M:['#3e2858','#1e1230'],F:['#180e22','#0a0810'],g:'#0a0810',m:.28},night:{B:['#182040','#0c1030'],M:['#0e1520','#060c12'],F:['#080c10','#020408'],g:'#020408',m:.52}};
 function lp(a,b,t){return a+(b-a)*t;}
 function rc(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
 function lc(c1,c2,t){const a=rc(c1),b=rc(c2);return `rgb(${Math.round(lp(a[0],b[0],t))},${Math.round(lp(a[1],b[1],t))},${Math.round(lp(a[2],b[2],t))})`;}
@@ -584,8 +1106,9 @@ function ap(pa,pb,t){
   sc('#gM stop:nth-child(1)',lc(pa.M[0],pb.M[0],t));sc('#gM stop:nth-child(2)',lc(pa.M[1],pb.M[1],t));
   sc('#gF stop:nth-child(1)',lc(pa.F[0],pb.F[0],t));sc('#gF stop:nth-child(2)',lc(pa.F[1],pb.F[1],t));
   document.getElementById('gTop').setAttribute('stop-color',lc(pa.g,pb.g,t));
-  document.getElementById('mist').style.opacity=lp(pa.m,pb.m,t);
-  const dk=lp(.07,.015,t);document.getElementById('pG').style.fill=`rgb(${Math.round(dk*255)},${Math.round(dk*255*1.5)},${Math.round(dk*255)})`;
+  const mo=lp(pa.m,pb.m,t);
+  ['fog1','fog2','fog3'].forEach((id,i)=>document.getElementById(id).style.opacity=mo*(0.6+i*.2));
+  const dk=lp(.068,.014,t);document.getElementById('pG').style.fill=`rgb(${Math.round(dk*255)},${Math.round(dk*255*1.5)},${Math.round(dk*255)})`;
 }
 function skyOp(p){
   document.getElementById('sDawn').style.opacity=Math.max(0,Math.min(1,(0.25-p)/.25));
@@ -594,47 +1117,72 @@ function skyOp(p){
   document.getElementById('sNight').style.opacity=Math.max(0,Math.min(1,(p-.75)/.25));
 }
 
-/* PANEL VISIBILITY — each panel shows for 1 viewport worth of scroll in its zone */
-const panels=[document.getElementById('p1'),document.getElementById('p2'),document.getElementById('p3'),document.getElementById('p4'),document.getElementById('p5')];
+/* ── IMPROVEMENT 1: SMOOTH PANEL CROSSFADE ──
+   Each panel has an opacity that's a smooth bell-curve centred on its scroll slot.
+   Panels overlap by 0.3 of a slot creating a dissolve rather than a hard swap. */
+const panels=[...document.querySelectorAll('.info-panel')];
 const dots=[0,1,2,3,4].map(i=>document.getElementById(`d${i}`));
+const PAGES=5;
 
+function panelOpacity(slotIdx, panelIdx){
+  // Bell-shaped curve: peak at panelIdx, fade width ~0.55 each side
+  const dist=Math.abs(slotIdx-panelIdx);
+  if(dist>0.9)return 0;
+  // smooth sigmoid-ish fade
+  const t=1-(dist/0.9);
+  return t*t*(3-2*t); // smoothstep
+}
+
+/* ── REFS ── */
 const mtB=document.getElementById('mtB'),mtM=document.getElementById('mtM'),mtF=document.getElementById('mtF'),pineL=document.getElementById('pineL'),
       sunEl=document.getElementById('sunEl'),moonEl=document.getElementById('moonEl'),stEl=document.getElementById('stL'),aurEl=document.getElementById('aur'),
       hint=document.getElementById('sh'),pb=document.getElementById('pb'),nav=document.getElementById('nav');
-const pMul=mob?.48:1;
-const PARALLAX_PAGES=5; // 5 panels = 500vh
+const pMul=mob?.46:1;
+const pals=[pal.dawn,pal.day,pal.dusk,pal.night];
 
 function onScroll(){
   const sy=window.scrollY;
-  const pH=window.innerHeight*PARALLAX_PAGES;
-  const p=Math.min(sy/pH,1); // 0→1 over the 500vh scroll space
+  const pH=window.innerHeight*PAGES;
+  const p=Math.min(sy/pH,1);
 
   /* Sky */
   skyOp(p);
   const ph=p*4,phase=Math.min(Math.floor(ph),3),fr=ph-phase;
-  const pals=[pal.dawn,pal.day,pal.dusk,pal.night];
   if(phase<3)ap(pals[phase],pals[phase+1],fr);else ap(pal.dusk,pal.night,1);
 
-  /* Sun */
+  /* IMPROVEMENT 4: dynamic light rays */
+  const phNames=['dawn','day','dusk','night'];
+  const curRays=RAYS[phNames[phase]];
+  const nxtRays=RAYS[phNames[Math.min(phase+1,3)]];
+  drawRays(lerpRay(curRays,nxtRays,fr));
+
+  /* Sun colour shift dawn→dusk (gold→orange→red) */
   const sp=Math.min(p/.72,1);
-  if(p<.72){sunEl.style.opacity=sp<.55?1:1-(sp-.55)/.45;sunEl.style.left=`${18+sp*56}%`;sunEl.style.top=`${6+Math.sin(sp*Math.PI)*-4+14}%`;}else sunEl.style.opacity=0;
+  if(p<.72){
+    sunEl.style.opacity=sp<.55?1:1-(sp-.55)/.45;
+    sunEl.style.left=`${18+sp*56}%`;sunEl.style.top=`${6+Math.sin(sp*Math.PI)*-4+14}%`;
+    // shift sun colour dawn(yellow) → day(white-gold) → dusk(orange-red)
+    const r1=sp<.5?sp*2:1,r2=1-Math.max(0,(sp-.6)/.4);
+    sunEl.style.boxShadow=`0 0 clamp(38px,6vw,96px) clamp(16px,3vw,52px) rgba(${Math.round(255)},${Math.round(190-sp*100)},${Math.round(60-sp*60)},${.5-sp*.12}),0 0 clamp(75px,12vw,195px) clamp(35px,6vw,95px) rgba(${Math.round(255)},${Math.round(140-sp*80)},${Math.round(30-sp*30)},.18)`;
+  } else sunEl.style.opacity=0;
+
   /* Moon */
-  if(p>.55){const mp=(p-.55)/.45;moonEl.style.opacity=Math.min(mp*2,1);moonEl.style.left=`${68-mp*28}%`;moonEl.style.top=`${18-mp*7}%`;}else moonEl.style.opacity=0;
+  if(p>.55){const mp=(p-.55)/.45;moonEl.style.opacity=Math.min(mp*2,1);moonEl.style.left=`${68-mp*28}%`;moonEl.style.top=`${18-mp*7}%`;}
+  else moonEl.style.opacity=0;
   stEl.style.opacity=p>.5?(p-.5)*2:0;
   aurEl.style.opacity=p>.72?(p-.72)*3.5:0;
   document.querySelectorAll('.sstar').forEach(s=>{s.style.visibility=p>.68?'visible':'hidden';});
 
   /* Parallax */
   mtB.style.transform=`translateY(${sy*.13*pMul}px)`;mtM.style.transform=`translateY(${sy*.25*pMul}px)`;mtF.style.transform=`translateY(${sy*.4*pMul}px)`;pineL.style.transform=`translateY(${sy*.52*pMul}px)`;
-  [0,1,2,3].forEach(i=>{const cl=document.getElementById(`cl${i}`);if(cl)cl.style.transform=`translateY(${sy*(.038+i*.011)*pMul}px)`;});
+  [0,1,2,3].forEach(i=>{const cl=document.getElementById(`cl${i}`);if(cl)cl.style.transform=`translateY(${sy*(.036+i*.011)*pMul}px)`;});
 
-  /* Info panels: each panel occupies 1/5 of the 500vh = 100vh slot
-     Show panel when its slot is "centered" in the viewport */
-  const panelH=window.innerHeight;
-  const slotIdx=sy/panelH; // 0→5
+  /* IMPROVEMENT 1: smooth crossfade panels */
+  const slotIdx=sy/window.innerHeight;
   panels.forEach((pan,i)=>{
-    const dist=Math.abs(slotIdx-i);
-    pan.classList.toggle('vis',dist<0.6);
+    const op=panelOpacity(slotIdx,i);
+    pan.style.opacity=op;
+    pan.classList.toggle('is-active',op>0.5);
   });
 
   /* Dots */
@@ -646,17 +1194,4 @@ function onScroll(){
   hint.style.opacity=sy>40?'0':'1';
   const tm=document.body.scrollHeight-window.innerHeight;
   pb.style.width=`${(sy/tm)*100}%`;
-  nav.classList.toggle('on',sy>50);
-
-  /* Reveal sections below parallax */
-  document.querySelectorAll('.rv,.rvl').forEach(el=>{if(el.getBoundingClientRect().top<window.innerHeight*.88)el.classList.add('in');});
-}
-
-window.addEventListener('scroll',onScroll,{passive:true});
-onScroll();
-// Show panel 0 on load
-setTimeout(()=>panels[0]&&panels[0].classList.add('vis'),300);
-let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(onScroll,140);});
-</script>
-</body>
-</html>
+  nav.classList.toggle('o
