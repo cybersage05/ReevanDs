@@ -11,8 +11,8 @@
   --vh:1vh;--gold:#f0c060;--gold2:#e8a830;--lb:#7ec8e3;
   --ink:#04060e;--text:rgba(215,230,248,0.92);--dim:rgba(175,205,235,0.62);
 }
-html{scroll-behavior:smooth;}
-body{font-family:'Cormorant Garamond',serif;background:var(--ink);color:var(--text);overflow-x:hidden;}
+html{scroll-behavior:smooth;height:100%;}
+body{font-family:'Cormorant Garamond',serif;background:var(--ink);color:var(--text);overflow-x:hidden;min-height:100%;}
 
 /* ─── CANVASES ─────────────────────────────── */
 #bgC,#ptC{position:fixed;inset:0;z-index:0;width:100%;height:100%;pointer-events:none;}
@@ -92,11 +92,12 @@ body{font-family:'Cormorant Garamond',serif;background:var(--ink);color:var(--te
   display:flex;align-items:center;
   padding:0 clamp(18px,7vw,100px);
   opacity:0;
-  /* NO CSS transition — opacity driven frame-by-frame by JS for smooth crossfade */
   pointer-events:none;
   will-change:opacity;
 }
 .info-panel.is-active{pointer-events:auto;}
+/* CSS-only fallback: panel 1 visible before JS runs */
+#p1{opacity:1;}
 
 /* ─── PANEL CONTENT SIZES — IMPROVEMENT 3: tighter type scale ─── */
 .pan-label{font-family:'Noto Serif JP',serif;font-weight:200;font-size:clamp(.48rem,.92vw,.62rem);letter-spacing:.44em;text-transform:uppercase;color:rgba(240,192,96,.58);margin-bottom:.42rem;display:flex;align-items:center;gap:.65rem;}
@@ -188,7 +189,10 @@ body{font-family:'Cormorant Garamond',serif;background:var(--ink);color:var(--te
 .pb{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,#f0c060,#e8a830,#ffb7c5,#7ec8e3);width:0%;z-index:300;pointer-events:none;}
 
 /* ─── PORTFOLIO (below parallax) ───────────────── */
-#port{position:relative;z-index:20;background:linear-gradient(180deg,transparent 0%,rgba(4,6,14,.97) 4vh,#040610 9vh);}
+#port{position:relative;z-index:20;background:#020408;}
+#spaceC{position:absolute;inset:0;width:100%;pointer-events:none;z-index:0;}
+#port .sec{position:relative;z-index:2;}
+#port::before{content:'';position:absolute;top:0;left:0;right:0;height:22vh;background:linear-gradient(180deg,#040610 0%,transparent 100%);z-index:3;pointer-events:none;}
 .sec{padding:clamp(55px,9vh,115px) clamp(16px,7vw,105px);position:relative;}
 .sec::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(240,192,96,.11) 30%,rgba(126,200,227,.08) 68%,transparent);}
 .si{max-width:1000px;margin:0 auto;}
@@ -315,7 +319,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 </head>
 <body>
 
-<canvas id="bgC"></canvas>
+<canvas id="bgC" style="background:#03050d;"></canvas>
 <canvas id="ptC"></canvas>
 <div id="lrays"><canvas id="rayC"></canvas></div>
 <div class="vignette"></div>
@@ -348,7 +352,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 
   <div class="mt" id="mtB">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 560" preserveAspectRatio="none" style="width:100%;display:block;">
-      <defs><linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8aaec8"/><stop offset="100%" stop-color="#5a88aa"/></linearGradient></defs>
+      <defs><linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7a9abf"/><stop offset="100%" stop-color="#5578a0"/></linearGradient></defs>
       <polygon fill="white" opacity=".88" points="160,50 198,106 122,106"/>
       <polygon fill="white" opacity=".84" points="420,28 463,91 377,91"/>
       <polygon fill="white" opacity=".9"  points="700,10 751,79 649,79"/>
@@ -492,6 +496,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 
 <!-- FULL PORTFOLIO BELOW -->
 <div id="port">
+<canvas id="spaceC"></canvas>
 
   <!-- ═══ EXPERIENCE — Interactive 3D ═══ -->
   <section class="sec" id="exp-sec" style="overflow:visible;">
@@ -1194,4 +1199,237 @@ function onScroll(){
   hint.style.opacity=sy>40?'0':'1';
   const tm=document.body.scrollHeight-window.innerHeight;
   pb.style.width=`${(sy/tm)*100}%`;
-  nav.classList.toggle('o
+  nav.classList.toggle('on',sy>50);
+
+  /* Reveal */
+  document.querySelectorAll('.rv').forEach(el=>{
+    if(el.getBoundingClientRect().top<window.innerHeight*.88)el.classList.add('in');
+  });
+}
+
+window.addEventListener('scroll',onScroll,{passive:true});
+
+// ── INIT: runs immediately via rAF so it works in iframes + sandboxes ──
+function initScene(){
+  ap(pal.dawn,pal.day,0);
+  skyOp(0);
+  drawRays(RAYS.dawn);
+  sunEl.style.opacity='1';
+  sunEl.style.left='36%';
+  sunEl.style.top='9%';
+  // show hero panel immediately
+  panels.forEach((p,i)=>{ p.style.opacity = i===0?'1':'0'; });
+  dots.forEach((d,i)=>{ d.classList.toggle('on',i===0); });
+  // run full scroll calc to sync everything
+  onScroll();
+}
+
+// Try immediately, then retry via rAF in case canvases aren't ready yet
+initScene();
+requestAnimationFrame(()=>{
+  initScene();
+  requestAnimationFrame(initScene);
+});
+
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(onScroll,140);});
+
+/* ══════════════════════════════════════════
+   DEEP-SPACE STARFIELD — behind portfolio sections
+   Three depth layers + nebula clouds + shooting stars
+   Parallaxes slowly on page scroll for 3D depth feel
+══════════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('spaceC');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  let W, H, portTop=0;
+
+  function resize(){
+    const port = document.getElementById('port');
+    W = canvas.width  = port.offsetWidth;
+    H = canvas.height = port.offsetHeight;
+    portTop = port.getBoundingClientRect().top + window.scrollY;
+    buildStars();
+    buildNebulae();
+  }
+
+  /* ── 3 star layers: far/mid/near with different sizes + speeds ── */
+  const LAYERS = [
+    { count:320, rMin:.2, rMax:.7,  speed:.012, baseOp:.18, twinkleAmp:.12 }, // far
+    { count:180, rMin:.4, rMax:1.1, speed:.028, baseOp:.28, twinkleAmp:.18 }, // mid
+    { count: 70, rMin:.7, rMax:1.8, speed:.055, baseOp:.42, twinkleAmp:.28 }, // near
+  ];
+  let layers = [];
+
+  function buildStars(){
+    layers = LAYERS.map(l => ({
+      ...l,
+      stars: Array.from({length: l.count}, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: l.rMin + Math.random()*(l.rMax - l.rMin),
+        op: l.baseOp * (.6 + Math.random()*.4),
+        phase: Math.random() * Math.PI * 2,
+        speed: 1.5 + Math.random()*3.5,  // twinkle speed
+        // subtle colour tint — mostly white but some blue/gold
+        hue: Math.random() < .12 ? 'gold' : Math.random() < .18 ? 'blue' : 'white',
+      }))
+    }));
+  }
+
+  /* ── Nebula cloud blobs ── */
+  const NEBULA_DEFS = [
+    { xf:.18, yf:.08, rx:.22, ry:.14, col:'rgba(90,60,160,', op:.07 },
+    { xf:.72, yf:.22, rx:.28, ry:.18, col:'rgba(40,80,160,',  op:.055 },
+    { xf:.45, yf:.52, rx:.32, ry:.20, col:'rgba(60,120,180,', op:.05 },
+    { xf:.85, yf:.68, rx:.24, ry:.15, col:'rgba(100,50,150,', op:.06 },
+    { xf:.10, yf:.78, rx:.20, ry:.13, col:'rgba(30,60,140,',  op:.05 },
+    { xf:.62, yf:.88, rx:.26, ry:.17, col:'rgba(80,40,130,',  op:.055 },
+    // gold nebulae — subtle warmth
+    { xf:.38, yf:.34, rx:.18, ry:.11, col:'rgba(160,110,30,', op:.035 },
+    { xf:.78, yf:.46, rx:.15, ry:.10, col:'rgba(140,90,20,',  op:.03 },
+  ];
+  let nebulae = [];
+  function buildNebulae(){
+    nebulae = NEBULA_DEFS.map(n => ({
+      ...n,
+      x: n.xf * W,
+      y: n.yf * H,
+      ex: n.rx * W,
+      ey: n.ry * H,
+    }));
+  }
+
+  /* ── Shooting stars ── */
+  let shoots = [];
+  function spawnShoot(){
+    const angle = -(15 + Math.random()*20) * Math.PI/180;
+    shoots.push({
+      x: Math.random() * W * .8,
+      y: Math.random() * H * .35,
+      vx: Math.cos(angle) * (3.5 + Math.random()*2.5),
+      vy: Math.sin(angle) * (3.5 + Math.random()*2.5) + .8,
+      len: 90 + Math.random()*80,
+      life: 1,
+      decay: .018 + Math.random()*.012,
+    });
+  }
+  // spawn a shoot every 4–9 seconds
+  setInterval(()=>{ if(Math.random()<.7) spawnShoot(); }, 5500);
+
+  let t = 0;
+  let lastScroll = 0;
+
+  function draw(){
+    // resize canvas height if port height changed (content loaded)
+    const port = document.getElementById('port');
+    if(port && port.offsetHeight !== H) resize();
+
+    ctx.clearRect(0, 0, W, H);
+
+    // fill deep space base
+    ctx.fillStyle = '#020408';
+    ctx.fillRect(0, 0, W, H);
+
+    // ── Nebulae ──
+    nebulae.forEach(n => {
+      // slow drift
+      const dx = Math.sin(t*.00018 + n.xf*4) * W*.015;
+      const dy = Math.cos(t*.00014 + n.yf*3) * H*.008;
+      const g = ctx.createRadialGradient(n.x+dx, n.y+dy, 0, n.x+dx, n.y+dy, Math.max(n.ex, n.ey));
+      g.addColorStop(0, n.col + n.op + ')');
+      g.addColorStop(.5, n.col + (n.op*.4) + ')');
+      g.addColorStop(1, 'transparent');
+      ctx.save();
+      ctx.scale(1, n.ey/n.ex);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(n.x+dx, (n.y+dy) * (n.ex/n.ey), n.ex*1.1, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // ── Stars — parallax offset from scroll ──
+    const scrollDelta = window.scrollY - portTop;
+
+    layers.forEach(layer => {
+      const yShift = scrollDelta * layer.speed * -0.06;  // parallax: far moves less
+      layer.stars.forEach(s => {
+        const twinkle = Math.sin(t * s.speed * .002 + s.phase);
+        const op = Math.max(0, s.op + twinkle * layer.twinkleAmp);
+
+        let col;
+        if(s.hue==='gold') col = `rgba(240,200,120,${op})`;
+        else if(s.hue==='blue') col = `rgba(160,210,255,${op})`;
+        else col = `rgba(220,230,255,${op})`;
+
+        // parallax wrapped y
+        let y = ((s.y + yShift) % H + H) % H;
+
+        // draw star — larger ones get a soft glow
+        if(s.r > 1.1){
+          const glow = ctx.createRadialGradient(s.x, y, 0, s.x, y, s.r*3.5);
+          glow.addColorStop(0, col);
+          glow.addColorStop(1, 'transparent');
+          ctx.fillStyle = glow;
+          ctx.fillRect(s.x - s.r*3.5, y - s.r*3.5, s.r*7, s.r*7);
+        }
+        ctx.beginPath();
+        ctx.arc(s.x, y, s.r, 0, Math.PI*2);
+        ctx.fillStyle = col;
+        ctx.fill();
+      });
+    });
+
+    // ── Shooting stars ──
+    shoots = shoots.filter(s => s.life > 0);
+    shoots.forEach(s => {
+      const tail = { x: s.x - Math.cos(Math.atan2(s.vy,s.vx))*s.len*s.life, y: s.y - Math.sin(Math.atan2(s.vy,s.vx))*s.len*s.life };
+      const g = ctx.createLinearGradient(tail.x, tail.y, s.x, s.y);
+      g.addColorStop(0, 'transparent');
+      g.addColorStop(.6, `rgba(220,235,255,${s.life*.3})`);
+      g.addColorStop(1, `rgba(255,248,220,${s.life*.9})`);
+      ctx.beginPath();
+      ctx.moveTo(tail.x, tail.y);
+      ctx.lineTo(s.x, s.y);
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      // head flare
+      const hg = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 3.5);
+      hg.addColorStop(0, `rgba(255,252,235,${s.life})`);
+      hg.addColorStop(1, 'transparent');
+      ctx.fillStyle = hg;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 3.5, 0, Math.PI*2);
+      ctx.fill();
+
+      s.x += s.vx; s.y += s.vy;
+      s.life -= s.decay;
+    });
+
+    t++;
+    requestAnimationFrame(draw);
+  }
+
+  // wait for DOM to be ready, then size + start
+  function start(){
+    resize();
+    draw();
+    spawnShoot(); // one immediately
+    setTimeout(spawnShoot, 2800);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+
+  window.addEventListener('resize', ()=>{ clearTimeout(window._srz); window._srz=setTimeout(resize,200); });
+})();
+
+</script>
+</body>
+</html>
