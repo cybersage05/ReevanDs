@@ -189,10 +189,13 @@ body{font-family:'Cormorant Garamond',serif;background:var(--ink);color:var(--te
 .pb{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,#f0c060,#e8a830,#ffb7c5,#7ec8e3);width:0%;z-index:300;pointer-events:none;}
 
 /* ─── PORTFOLIO (below parallax) ───────────────── */
-#port{position:relative;z-index:20;background:#020408;}
-#spaceC{position:absolute;inset:0;width:100%;pointer-events:none;z-index:0;}
+#port{position:relative;z-index:6;background:transparent;}
 #port .sec{position:relative;z-index:2;}
-#port::before{content:'';position:absolute;top:0;left:0;right:0;height:22vh;background:linear-gradient(180deg,#040610 0%,transparent 100%);z-index:3;pointer-events:none;}
+/* Fade-in overlay at top of port so parallax→space blends smoothly */
+#port::before{content:'';position:fixed;top:0;left:0;right:0;height:30vh;
+  background:linear-gradient(180deg,rgba(4,6,14,1) 0%,transparent 100%);
+  z-index:4;pointer-events:none;opacity:0;transition:opacity .8s;}
+#port.space-on::before{opacity:1;}
 .sec{padding:clamp(55px,9vh,115px) clamp(16px,7vw,105px);position:relative;}
 .sec::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(240,192,96,.11) 30%,rgba(126,200,227,.08) 68%,transparent);}
 .si{max-width:1000px;margin:0 auto;}
@@ -580,14 +583,16 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
 <div class="sh" id="sh"><span>scroll · 下へ</span><div class="sl"></div></div>
 
 <!-- FULL PORTFOLIO BELOW -->
+<!-- Space canvas: fixed, behind port sections, visible after parallax zone -->
+<canvas id="spaceC" style="position:fixed;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;opacity:0;transition:opacity 1.2s ease;"></canvas>
 <div id="port">
-<canvas id="spaceC"></canvas>
+
 
   <!-- ═══ EXPERIENCE — Interactive 3D ═══ -->
-  <section class="sec" id="exp-sec" style="overflow:visible;">
+  <section class="sec" id="exp-sec" style="overflow:visible;background:transparent;">
     <style>
     /* ── EXP WRAPPER ── */
-    .exp-layout{display:grid;grid-template-columns:260px 1fr;gap:0;max-width:1060px;margin:0 auto;min-height:540px;perspective:1200px;}
+    .exp-layout{display:grid;grid-template-columns:260px 1fr;gap:0;max-width:1060px;margin:0 auto;min-height:540px;perspective:1200px;background:rgba(3,5,14,.82);backdrop-filter:blur(2px);border:1px solid rgba(240,192,96,.08);}
     @media(max-width:760px){.exp-layout{grid-template-columns:1fr;min-height:auto;}}
 
     /* ── SIDEBAR TABS ── */
@@ -681,10 +686,23 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
       transition:opacity .3s ease, transform .3s ease;
     }
     @media(max-width:760px){
-      .exp-card{position:relative;inset:auto;padding:0;transform:translateY(16px);transition:opacity .5s,transform .5s;}
-      .exp-card.active{transform:translateY(0);}
-      .exp-card.exit{transform:translateY(-10px);}
-      .exp-cards{padding:20px 0 0 0;min-height:auto;}
+      /* On mobile cards stack — hide inactive ones so they don't create blank space */
+      .exp-card{
+        position:relative;inset:auto;padding:0;
+        display:none;  /* hidden by default — no height taken */
+        opacity:0;
+        transform:translateY(12px);
+        transition:opacity .45s ease,transform .45s ease;
+      }
+      .exp-card.active{
+        display:block;  /* only active card takes space */
+        opacity:1;
+        transform:translateY(0);
+      }
+      .exp-card.exit{
+        display:none;  /* immediately remove from flow when exiting */
+      }
+      .exp-cards{padding:16px 0 0 0;min-height:auto;}
     }
     @media(max-width:600px){
       .exp-layout{gap:0;border:1px solid rgba(240,192,96,.1);}
@@ -1012,8 +1030,14 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
       setTimeout(()=>cards[current].classList.remove('exit'),350);
       tabs[current].classList.remove('active');
       current=idx;
-      // enter new card
-      cards[current].classList.add('active');
+      // enter new card — slight delay so exit animation registers
+      requestAnimationFrame(()=>{
+        cards[current].classList.add('active');
+        // scroll the new card into view on mobile
+        if(window.innerWidth<=760){
+          cards[current].scrollIntoView({behavior:'smooth',block:'nearest'});
+        }
+      });
       tabs[current].classList.add('active');
       updateSlider(current);
     }
@@ -1054,7 +1078,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
   })();
   </script>
 
-  <section class="sec" id="cred-sec">
+  <section class="sec" id="cred-sec" style="background:rgba(3,5,14,.78);">
     <div class="si">
       <div class="sk2 rv">05 · 資格と学歴</div>
       <h2 class="sh2 rv">Education &amp; <span class="g">Credentials</span><span class="jps">学歴・資格</span></h2>
@@ -1084,7 +1108,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;ba
   </section>
 
   <!-- IMPROVEMENT 5: Redesigned contact section -->
-  <section class="sec" id="ctc-sec">
+  <section class="sec" id="ctc-sec" style="background:rgba(3,5,14,.85);">
     <div class="si">
       <div class="ctc-ambient">繋</div>
       <div class="ctcin">
@@ -1326,6 +1350,20 @@ function onScroll(){
   document.querySelectorAll('.rv').forEach(el=>{
     if(el.getBoundingClientRect().top<window.innerHeight*.88)el.classList.add('in');
   });
+
+  /* Space canvas — fade in once user passes the parallax zone */
+  const spaceC = document.getElementById('spaceC');
+  const portEl = document.getElementById('port');
+  if(spaceC && portEl){
+    const portTop = portEl.getBoundingClientRect().top;
+    // Start fading in space canvas as port section approaches
+    const spaceProgress = Math.max(0, Math.min(1, (-portTop + window.innerHeight*.5) / window.innerHeight));
+    spaceC.style.opacity = spaceProgress;
+    portEl.classList.toggle('space-on', spaceProgress > 0.3);
+    // Fade out the fixed parallax scene as space takes over
+    const sceneEl = document.querySelector('.scene');
+    if(sceneEl) sceneEl.style.opacity = Math.max(0, 1 - spaceProgress * 1.4);
+  }
 }
 
 window.addEventListener('scroll',onScroll,{passive:true});
@@ -1367,10 +1405,9 @@ let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(onSc
   let W, H, portTop=0;
 
   function resize(){
-    const port = document.getElementById('port');
-    W = canvas.width  = port.offsetWidth;
-    H = canvas.height = port.offsetHeight;
-    portTop = port.getBoundingClientRect().top + window.scrollY;
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    portTop = 0; // fixed canvas, always full viewport
     buildStars();
     buildNebulae();
   }
@@ -1472,8 +1509,8 @@ let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(onSc
       ctx.restore();
     });
 
-    // ── Stars — parallax offset from scroll ──
-    const scrollDelta = window.scrollY - portTop;
+    // ── Stars — slow parallax based on absolute scroll ──
+    const scrollDelta = window.scrollY;
 
     layers.forEach(layer => {
       const yShift = scrollDelta * layer.speed * -0.06;  // parallax: far moves less
