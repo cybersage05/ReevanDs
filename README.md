@@ -1,31 +1,18 @@
-# Share this HTML via GitHub Pages
+# Reevan D'Souza Portfolio
 
-This repository is configured to publish the portfolio on **GitHub Pages**.
+A static, GitHub Pages-compatible portfolio for Reevan D'Souza, built with React, TypeScript, Vite, Tailwind CSS, Framer Motion, GSAP ScrollTrigger, and a minimal React Three Fiber scene.
 
-## 1) Push this repo to GitHub
-
-If your local repo is not connected yet:
+## Local development
 
 ```bash
-git remote add origin https://github.com/<your-username>/<your-repo>.git
-git branch -M main
-git push -u origin main
+npm install
+npm run dev
 ```
 
-## 2) Enable GitHub Pages (one-time)
+## Production build
 
-1. Open your GitHub repository.
-2. Go to **Settings → Pages**.
-3. Under **Build and deployment**, set **Source** to **GitHub Actions**.
-
-The included workflow `.github/workflows/deploy-pages.yml` will deploy automatically on pushes to `main`.
-
-## 3) Share the link
-
-After deployment completes, your portfolio is available at:
-
-```text
-https://<your-username>.github.io/<your-repo>/
+```bash
+npm run build
 ```
 
-It loads `index.html`, which redirects to `Reevan_Portfolio_Shinkai.html`.
+The Vite config uses `base: './'` so the generated `dist/` output works from GitHub Pages project URLs.
